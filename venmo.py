@@ -1,6 +1,7 @@
 import urllib
 import webbrowser
 
+import charges
 import requests
 from helpers import log_response
 
@@ -55,15 +56,15 @@ def get_access_token(authorization_code):
     return response_dict['access_token']
 
 
-def charge_dylan(access_token):
+def create_rent_charge(access_token, user):
+    params = {
+        'access_token': access_token,
+        'note': 'Rent (test)',
+        'audience': 'private',
+    }
+    params.update(user)
     response = requests.post(
-        payments_url_with_params({
-            'access_token': access_token,
-            'amount': -.01,
-            'phone': '14153509693',
-            'note': 'mmmmm',
-            'audience': 'private',
-        }),
+        payments_url_with_params(params)
     )
     log_response(response)
 
@@ -71,4 +72,5 @@ def charge_dylan(access_token):
 if __name__ == '__main__':
     authorization_code = get_code()
     access_token = get_access_token(authorization_code)
-    charge_dylan(access_token)
+    for roommate in charges.roommates:
+        create_rent_charge(my_token, roommate)
