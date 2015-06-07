@@ -31,3 +31,8 @@ def log_response(response):
         amount=amount,
         note=note,
     )
+
+
+def executor(function_and_arguments):
+    function, args = function_and_arguments
+    function(*args)
