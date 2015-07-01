@@ -3,8 +3,8 @@ import webbrowser
 
 import charges
 import requests
-from gevent.pool import Pool
-from helpers import executor, log_response
+import gevent
+from helpers import log_response
 
 CLIENT_ID = '2667'
 CLIENT_SECRET = 'srDrmU3yf452HuFF63HqHEt25pa5DexZ'
@@ -60,7 +60,7 @@ def get_access_token(authorization_code):
 def create_rent_charge(access_token, user):
     params = {
         'access_token': access_token,
-        'note': 'Rent (test)',
+        'note': 'Rent (July)',
         'audience': 'private',
     }
     params.update(user)
@@ -74,9 +74,5 @@ if __name__ == '__main__':
     authorization_code = get_code()
     access_token = get_access_token(authorization_code)
 
-    num_workers = 20
-    pool = Pool(num_workers)
-    pool.map(
-        executor,
-        [(create_rent_charge, [access_token, roommate]) for roommate in charges.roommates],
-    )
+    jobs = [gevent.spawn(create_rent_charge, access_token, roommate) for roommate in charges.roommates]
+    gevent.joinall(jobs)
