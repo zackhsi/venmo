@@ -1,27 +1,27 @@
 nick_lippis = {
-    'amount': -1800,
+    'amount': -1961.28,
     'phone': '16178271991',
 }
 zack_morris = {
-    'amount': -1550,
+    'amount': -876.29,
     'phone': '15308591050',
 }
 cynthia_laiacona = {
-    'amount': -1100,
+    'amount': -1716.28,
     'phone': '15308590976',
 }
-tricia_mooney = {
-    'amount': -1100,
-    'phone': '18059755626',
+kyle_merwin = {
+    'amount': -976.29,
+    'phone': '14157204626',
 }
 rob_garbanati = {
-    'amount': -1000,
+    'amount': -976.28,
     'phone': '19496331541',
 }
 roommates = [
     nick_lippis,
     zack_morris,
     cynthia_laiacona,
-    tricia_mooney,
+    kyle_merwin,
     rob_garbanati,
 ]

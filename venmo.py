@@ -60,7 +60,7 @@ def get_access_token(authorization_code):
 def create_rent_charge(access_token, user):
     params = {
         'access_token': access_token,
-        'note': 'Rent (July)',
+        'note': 'Rent (August)',
         'audience': 'private',
     }
     params.update(user)
@@ -74,5 +74,8 @@ if __name__ == '__main__':
     authorization_code = get_code()
     access_token = get_access_token(authorization_code)
 
-    jobs = [gevent.spawn(create_rent_charge, access_token, roommate) for roommate in charges.roommates]
+    jobs = [gevent.spawn(create_rent_charge,
+                         access_token,
+                         roommate)
+            for roommate in charges.roommates]
     gevent.joinall(jobs)
