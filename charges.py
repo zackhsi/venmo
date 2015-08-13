@@ -1,3 +1,8 @@
+'''
+I pay 1951.28
+Total is 8457.70
+I need to cash out $6506.42
+'''
 nick_lippis = {
     'amount': -1961.28,
     'phone': '16178271991',
