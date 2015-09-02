@@ -60,7 +60,7 @@ def get_access_token(authorization_code):
 def create_rent_charge(access_token, user):
     params = {
         'access_token': access_token,
-        'note': 'Rent (August)',
+        'note': 'Rent',
         'audience': 'private',
     }
     params.update(user)
