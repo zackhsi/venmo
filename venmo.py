@@ -1,9 +1,10 @@
 import urllib
 import webbrowser
 
-import charges
-import requests
 import gevent
+import requests
+
+import charges
 from helpers import log_response
 
 CLIENT_ID = '2667'
