@@ -23,9 +23,13 @@ rob_garbanati = {
     'amount': -976.28,
     'phone': '19496331541',
 }
+nate_siswanto = {
+    'amount': -876.29,
+    'phone': '18186319598',
+}
 roommates = [
     nick_lippis,
-    zack_morris,
+    nate_siswanto,
     cynthia_laiacona,
     kyle_merwin,
     rob_garbanati,
