@@ -28,9 +28,9 @@ nate_siswanto = {
     'phone': '18186319598',
 }
 roommates = [
-    nick_lippis,
-    nate_siswanto,
     cynthia_laiacona,
     kyle_merwin,
+    nick_lippis,
     rob_garbanati,
+    zack_morris,
 ]
