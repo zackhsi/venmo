@@ -11,7 +11,13 @@ def pprint(dictionary):
 
 
 def log_response(response):
-    payment = response.json()['data']['payment']
+    if 'error' in response:
+        message = response['error']['message']
+        code = response['error']['code']
+        print 'message="{}" code={}'.format(message, code)
+        return
+
+    payment = response['data']['payment']
     target = payment['target']
 
     payment_action = payment['action']

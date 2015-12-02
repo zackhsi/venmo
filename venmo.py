@@ -1,4 +1,5 @@
 import json
+import sys
 import urllib
 import webbrowser
 
@@ -66,10 +67,11 @@ def read_access_token_from_db():
 def write_access_token_to_db():
     authorization_code = get_code()
     access_token = access_token_from_code(authorization_code)
+    write_db({'access_token': access_token})
+
+
+def write_db(db):
     with open(DB_FILE, 'w') as data_file:
-        db = {
-            'access_token': access_token
-        }
         data_file.write(json.dumps(db))
 
 
@@ -94,14 +96,29 @@ def create_rent_charge(access_token, user):
     params.update(user)
     response = requests.post(
         payments_url_with_params(params)
-    )
+    ).json()
     log_response(response)
 
 
+def main():
+    actions = ['charge', 'dry-run', 'refresh-token']
+    if len(sys.argv) != 2 or sys.argv[1] not in actions:
+        print "USAGE:  python venmo.py [{}]".format(" | ".join(actions))
+        return
+
+    action = sys.argv[1]
+    if action == 'charge':
+        access_token = get_access_token()
+        jobs = [gevent.spawn(create_rent_charge,
+                             access_token,
+                             roommate)
+                for roommate in charges.roommates.values()]
+        gevent.joinall(jobs)
+    elif action == 'dry-run':
+        print 'Would charge {}'.format(json.dumps(charges.roommates, indent=4))
+    elif action == 'refresh-token':
+        write_access_token_to_db()
+
+
 if __name__ == '__main__':
-    access_token = get_access_token()
-    jobs = [gevent.spawn(create_rent_charge,
-                         access_token,
-                         roommate)
-            for roommate in charges.roommates]
-    gevent.joinall(jobs)
+    main()
