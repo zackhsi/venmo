@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 
+"""
+Venmo CLI.
+
+This script creates charge requests via the Venmo API.
+
+    ./venmo user zmo 23.19 "tacos"
+
+    ./venmo group rent
+"""
+
+import argparse
 import json
-import sys
 import urllib
 import webbrowser
 
@@ -102,24 +112,44 @@ def create_rent_charge(access_token, user):
     log_response(response)
 
 
-def main():
-    actions = ['charge', 'dry-run', 'refresh-token']
-    if len(sys.argv) != 2 or sys.argv[1] not in actions:
-        print "USAGE:  python venmo.py [{}]".format(" | ".join(actions))
-        return
+def user(args):
+    raise NotImplementedError()
 
-    action = sys.argv[1]
-    if action == 'charge':
-        access_token = get_access_token()
+
+def group(args):
+    access_token = get_access_token()
+    if args.run:
         jobs = [gevent.spawn(create_rent_charge,
                              access_token,
                              roommate)
                 for roommate in charges.roommates.values()]
         gevent.joinall(jobs)
-    elif action == 'dry-run':
-        print 'Would charge {}'.format(json.dumps(charges.roommates, indent=4))
-    elif action == 'refresh-token':
-        write_access_token_to_db()
+    else:
+        print 'Would charge {}'.format(json.dumps(charges.roommates,
+                                                  indent=4))
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    subparsers = parser.add_subparsers()
+
+    parser_user = subparsers.add_parser('user')
+    parser_user.set_defaults(func=user)
+
+    parser_group = subparsers.add_parser('group')
+    parser_group.add_argument("group", choices=['rent'])
+    parser_group.add_argument("--run", default=False, action='store_true',
+                              help="whether to actually send the charges")
+    parser_group.set_defaults(func=group)
+
+    parser_refresh_token = subparsers.add_parser('refresh-token')
+    parser_refresh_token.set_defaults(func=write_access_token_to_db)
+
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == '__main__':
