@@ -39,10 +39,19 @@ nate_siswanto = {
         'phone': '18186319598',
     }
 }
+
+# 2/31 for Cyn
+# $500 for Ben Hunter
+temp_ben_hunter = {
+    'ben_hunter': {
+        'amount': -500,
+        'phone': '14153422879',
+    }
+}
 roommates = {}
-for roommate in [cynthia_laiacona,
-                 kyle_merwin,
+for roommate in [kyle_merwin,
                  nick_lippis,
                  rob_garbanati,
-                 zack_morris]:
+                 zack_morris,
+                 temp_ben_hunter]:
     roommates.update(roommate)
