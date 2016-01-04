@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -e
+
+rm -f db.json
+for file in migrations/*.py; do
+  python $file
+done
