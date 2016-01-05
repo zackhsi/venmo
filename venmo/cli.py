@@ -21,7 +21,6 @@ import requests
 
 import venmo
 from venmo import settings, oauth
-from helpers import log_response
 
 
 def user(args):
@@ -51,9 +50,38 @@ def create_rent_charge(rent_charge, access_token, run):
         response = requests.post(
             payments_url_with_params(params)
         ).json()
-        log_response(response)
+        _log_response(response)
     else:
         print "Would send charge {}".format(json.dumps(params, indent=4))
+
+
+def _log_response(response):
+    if 'error' in response:
+        message = response['error']['message']
+        code = response['error']['code']
+        print 'message="{}" code={}'.format(message, code)
+        return
+
+    payment = response['data']['payment']
+    target = payment['target']
+
+    payment_action = payment['action']
+    amount = payment['amount']
+    if target['type'] == 'user':
+        user = "{first_name} {last_name}".format(
+            first_name=target['user']['first_name'],
+            last_name=target['user']['last_name'],
+        )
+    else:
+        user = target[target['type']],
+    note = payment['note']
+
+    print "{payment_action} {user} ${amount} for {note}".format(
+        payment_action=payment_action,
+        user=user,
+        amount=amount,
+        note=note,
+    )
 
 
 def payments_url_with_params(params):
