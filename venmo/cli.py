@@ -5,10 +5,10 @@ Venmo CLI.
 
 This script creates charge requests via the Venmo API.
 
-    ./venmo user zmo 23.19 "tacos"
-    ./venmo user 15305551050 23.19 "tacos"
+    venv/bin/python -m venmo.cli user zmo 23.19 "tacos"
+    venv/bin/python -m venmo.cli user 15305551050 23.19 "tacos"
 
-    ./venmo group rent
+    venv/bin/python -m venmo.cli group rent
 """
 
 import argparse
@@ -24,7 +24,13 @@ from venmo import settings, oauth
 
 
 def user(args):
-    raise NotImplementedError()
+    access_token = oauth.get_access_token()
+    rent_charge = {
+        'note': args.note,
+        'phone': args.phone,
+        'amount': args.amount,
+    }
+    create_rent_charge(rent_charge, access_token, args.run)
 
 
 def group(args):
@@ -99,6 +105,14 @@ def main():
     subparsers = parser.add_subparsers()
 
     parser_user = subparsers.add_parser('user')
+    parser_user.add_argument("phone", help="who to send the request to")
+    parser_user.add_argument(
+        "amount",
+        help="how much to pay or charge (negative to charge)",
+    )
+    parser_user.add_argument("note", help="what the request is for")
+    parser_user.add_argument("--run", default=False, action='store_true',
+                             help="whether to actually send the charges")
     parser_user.set_defaults(func=user)
 
     parser_group = subparsers.add_parser('group')
