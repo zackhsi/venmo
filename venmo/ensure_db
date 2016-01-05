@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -e
+
+echo "Dropping database ..."
+rm -f db.json
+
+for file in venmo/migrations/*.py; do
+  basename=$(basename $file)
+  migration=${basename%.py}
+  echo "Running $migration ..."
+  venv/bin/python -m venmo.migrations.$migration
+done

@@ -6,19 +6,20 @@ Venmo CLI.
 This script creates charge requests via the Venmo API.
 
     ./venmo user zmo 23.19 "tacos"
+    ./venmo user 15305551050 23.19 "tacos"
 
     ./venmo group rent
 """
-
 import argparse
 import json
 import urllib
 import webbrowser
 
 import gevent
+import gevent.pool
 import requests
 
-import charges
+import venmo
 from helpers import log_response
 
 CLIENT_ID = '2667'
@@ -99,17 +100,19 @@ def access_token_from_code(authorization_code):
     return response_dict['access_token']
 
 
-def create_rent_charge(access_token, user):
+def create_rent_charge(rent_charge, access_token, run):
     params = {
         'access_token': access_token,
-        'note': 'Rent',
         'audience': 'private',
     }
-    params.update(user)
-    response = requests.post(
-        payments_url_with_params(params)
-    ).json()
-    log_response(response)
+    params.update(rent_charge)
+    if run:
+        response = requests.post(
+            payments_url_with_params(params)
+        ).json()
+        log_response(response)
+    else:
+        print "Would send charge {}".format(json.dumps(params, indent=4))
 
 
 def user(args):
@@ -118,15 +121,15 @@ def user(args):
 
 def group(args):
     access_token = get_access_token()
-    if args.run:
-        jobs = [gevent.spawn(create_rent_charge,
-                             access_token,
-                             roommate)
-                for roommate in charges.roommates.values()]
-        gevent.joinall(jobs)
-    else:
-        print 'Would charge {}'.format(json.dumps(charges.roommates,
-                                                  indent=4))
+    pool = gevent.pool.Pool(20)
+    for rent_charge in venmo.rent.all():
+        pool.spawn(
+            create_rent_charge,
+            rent_charge,
+            access_token,
+            args.run,
+        )
+    pool.join()
 
 
 def main():
