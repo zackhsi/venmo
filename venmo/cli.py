@@ -48,11 +48,18 @@ def create_rent_charge(rent_charge, access_token, run):
     params.update(rent_charge)
     if run:
         response = requests.post(
-            payments_url_with_params(params)
+            _payments_url_with_params(params)
         ).json()
         _log_response(response)
     else:
         print "Would send charge {}".format(json.dumps(params, indent=4))
+
+
+def _payments_url_with_params(params):
+    return "{payments_base_url}?{params}".format(
+        payments_base_url=settings.PAYMENTS_BASE_URL,
+        params=urllib.urlencode(params),
+    )
 
 
 def _log_response(response):
@@ -81,13 +88,6 @@ def _log_response(response):
         user=user,
         amount=amount,
         note=note,
-    )
-
-
-def payments_url_with_params(params):
-    return "{payments_base_url}?{params}".format(
-        payments_base_url=settings.PAYMENTS_BASE_URL,
-        params=urllib.urlencode(params),
     )
 
 
