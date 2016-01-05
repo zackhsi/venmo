@@ -14,69 +14,31 @@ This script creates charge requests via the Venmo API.
 import argparse
 import json
 import urllib
-import webbrowser
 
 import gevent
 import gevent.pool
 import requests
 
 import venmo
+from venmo import settings, oauth
 from helpers import log_response
 
-CLIENT_ID = '2667'
-CLIENT_SECRET = 'srDrmU3yf452HuFF63HqHEt25pa5DexZ'
-BASE_URL = "https://api.venmo.com/v1"
-PAYMENTS_BASE_URL = "{base_url}/payments".format(base_url=BASE_URL)
 
-DB_FILE = 'db.json'
+def user(args):
+    raise NotImplementedError()
 
 
-def authorization_url():
-    scopes = [
-        'make_payments',
-        'access_feed',
-        'access_profile',
-        'access_email',
-        'access_phone',
-        'access_balance',
-        'access_friends',
-    ]
-    params = {
-        'client_id': CLIENT_ID,
-        'scope': " ".join(scopes),
-        'response_type': 'code',
-    }
-    return "{base_url}/oauth/authorize?{params}".format(
-        base_url=BASE_URL,
-        params=urllib.urlencode(params)
-    )
-
-
-def payments_url_with_params(params):
-    return "{payments_base_url}?{params}".format(
-        payments_base_url=PAYMENTS_BASE_URL,
-        params=urllib.urlencode(params),
-    )
-
-
-def get_access_token():
-    return venmo.auth.all()[0]['access_token']
-
-
-def refresh_token(args):
-    webbrowser.open(authorization_url())
-    authorization_code = raw_input("Code: ")
-    data = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "code": authorization_code,
-    }
-    url = "{}/oauth/access_token".format(BASE_URL)
-    response = requests.post(url, data)
-    response_dict = response.json()
-    access_token = response_dict['access_token']
-    venmo.auth.purge()
-    venmo.auth.insert({'access_token': access_token})
+def group(args):
+    access_token = oauth.get_access_token()
+    pool = gevent.pool.Pool(20)
+    for rent_charge in venmo.rent.all():
+        pool.spawn(
+            create_rent_charge,
+            rent_charge,
+            access_token,
+            args.run,
+        )
+    pool.join()
 
 
 def create_rent_charge(rent_charge, access_token, run):
@@ -94,21 +56,11 @@ def create_rent_charge(rent_charge, access_token, run):
         print "Would send charge {}".format(json.dumps(params, indent=4))
 
 
-def user(args):
-    raise NotImplementedError()
-
-
-def group(args):
-    access_token = get_access_token()
-    pool = gevent.pool.Pool(20)
-    for rent_charge in venmo.rent.all():
-        pool.spawn(
-            create_rent_charge,
-            rent_charge,
-            access_token,
-            args.run,
-        )
-    pool.join()
+def payments_url_with_params(params):
+    return "{payments_base_url}?{params}".format(
+        payments_base_url=settings.PAYMENTS_BASE_URL,
+        params=urllib.urlencode(params),
+    )
 
 
 def main():
@@ -128,7 +80,7 @@ def main():
     parser_group.set_defaults(func=group)
 
     parser_refresh_token = subparsers.add_parser('refresh-token')
-    parser_refresh_token.set_defaults(func=refresh_token)
+    parser_refresh_token.set_defaults(func=oauth.refresh_token)
 
     args = parser.parse_args()
     args.func(args)
