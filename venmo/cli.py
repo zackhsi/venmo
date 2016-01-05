@@ -10,6 +10,7 @@ This script creates charge requests via the Venmo API.
 
     ./venmo group rent
 """
+
 import argparse
 import json
 import urllib
