@@ -59,37 +59,13 @@ def payments_url_with_params(params):
     )
 
 
-def get_code():
-    webbrowser.open(authorization_url())
-    return raw_input("Code: ")
-
-
 def get_access_token():
-    try:
-        return read_access_token_from_db()
-    except IOError:
-        write_access_token_to_db()
-        return read_access_token_from_db()
+    return venmo.auth.all()[0]['access_token']
 
 
-def read_access_token_from_db():
-    with open(DB_FILE, 'r') as data_file:
-        data = json.load(data_file)
-        return data.get('access_token')
-
-
-def write_access_token_to_db():
-    authorization_code = get_code()
-    access_token = access_token_from_code(authorization_code)
-    write_db({'access_token': access_token})
-
-
-def write_db(db):
-    with open(DB_FILE, 'w') as data_file:
-        data_file.write(json.dumps(db))
-
-
-def access_token_from_code(authorization_code):
+def refresh_token(args):
+    webbrowser.open(authorization_url())
+    authorization_code = raw_input("Code: ")
     data = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
@@ -98,7 +74,9 @@ def access_token_from_code(authorization_code):
     url = "{}/oauth/access_token".format(BASE_URL)
     response = requests.post(url, data)
     response_dict = response.json()
-    return response_dict['access_token']
+    access_token = response_dict['access_token']
+    venmo.auth.purge()
+    venmo.auth.insert({'access_token': access_token})
 
 
 def create_rent_charge(rent_charge, access_token, run):
@@ -150,7 +128,7 @@ def main():
     parser_group.set_defaults(func=group)
 
     parser_refresh_token = subparsers.add_parser('refresh-token')
-    parser_refresh_token.set_defaults(func=write_access_token_to_db)
+    parser_refresh_token.set_defaults(func=refresh_token)
 
     args = parser.parse_args()
     args.func(args)

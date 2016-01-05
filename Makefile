@@ -8,3 +8,7 @@ db: venv
 .PHONY: rent
 rent: venv
 	venv/bin/python -m venmo.cli group rent
+
+.PHONY: token
+token: venv
+	venv/bin/python -m venmo.cli refresh-token
