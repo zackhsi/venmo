@@ -17,4 +17,9 @@ setup(
     license='MIT',
     packages=['venmo'],
     install_requires=requirements,
+    entry_points={
+        'console_scripts': [
+            'venmo = venmo.cli:main',
+        ],
+    },
 )
