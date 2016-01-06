@@ -14,7 +14,6 @@ Refresh your venmo access token:
 """
 
 import argparse
-import json
 import urllib
 
 import requests
@@ -39,13 +38,10 @@ def _pay_or_charge(args):
         'access_token': oauth.get_access_token(),
         'audience': 'private',
     }
-    if args.run:
-        response = requests.post(
-            _payments_url_with_params(params)
-        ).json()
-        _log_response(response)
-    else:
-        print json.dumps(params, indent=4)
+    response = requests.post(
+        _payments_url_with_params(params)
+    ).json()
+    _log_response(response)
 
 
 def _payments_url_with_params(params):
@@ -101,8 +97,6 @@ def main():
         subparser.add_argument("phone", help="who to {}".format(action))
         subparser.add_argument("amount", help="how much to pay or charge")
         subparser.add_argument("note", help="what the request is for")
-        subparser.add_argument("--run", default=False, action='store_true',
-                               help="whether to actually send the charges")
         subparser.set_defaults(func=globals()[action])
 
     parser_refresh_token = subparsers.add_parser('refresh-token')
