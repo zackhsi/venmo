@@ -4,7 +4,6 @@ requirements = [
     'gevent==1.1b5',  # https://github.com/NixOS/nixpkgs/issues/7275
     'greenlet==0.4.9',
     'requests==2.9.1',
-    'tinydb==3.1.0',
 ]
 
 setup(

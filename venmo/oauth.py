@@ -9,7 +9,6 @@ import webbrowser
 
 import requests
 
-import venmo
 from venmo import settings
 
 
@@ -35,7 +34,16 @@ def _authorization_url():
 
 
 def get_access_token():
-    return venmo.auth.all()[0]['access_token']
+    try:
+        with open('ACCESS_TOKEN') as f:
+            return f.read()
+    except IOError:
+        print("""
+    Venmo requires an access token. Please run:
+
+        venmo refresh-token
+""")
+        exit(1)
 
 
 def refresh_token(args):
@@ -50,5 +58,5 @@ def refresh_token(args):
     response = requests.post(url, data)
     response_dict = response.json()
     access_token = response_dict['access_token']
-    venmo.auth.purge()
-    venmo.auth.insert({'access_token': access_token})
+    with open('ACCESS_TOKEN', 'w') as f:
+        f.write(access_token)
