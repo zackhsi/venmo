@@ -8,7 +8,7 @@ requirements = [
 
 setup(
     name='venmo',
-    version='0.2.0',
+    version='0.2.1',
     description='Venmo CLI',
     url='http://github.com/zackhsi/venmo',
     author='Zack Hsi',
