@@ -53,7 +53,7 @@ def _pay_or_charge(args):
 
 def _payments_url_with_params(params):
     return "{payments_base_url}?{params}".format(
-        payments_base_url=settings.PAYMENTS_BASE_URL,
+        payments_base_url=settings.PAYMENTS_URL,
         params=urllib.urlencode(params),
     )
 
