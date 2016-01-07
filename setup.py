@@ -1,14 +1,12 @@
 from setuptools import setup
 
 requirements = [
-    'gevent==1.1b5',  # https://github.com/NixOS/nixpkgs/issues/7275
-    'greenlet==0.4.9',
     'requests==2.9.1',
 ]
 
 setup(
     name='venmo',
-    version='0.2.1',
+    version='0.2.2',
     description='Venmo CLI',
     url='http://github.com/zackhsi/venmo',
     author='Zack Hsi',
