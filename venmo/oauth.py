@@ -27,9 +27,9 @@ def get_access_token():
 
 def refresh_token(args):
     # Get and parse authorization webpage xml and form
-    response = requests.get(_authorization_url())
+    session = requests.Session()
+    response = session.get(_authorization_url())
     authorization_page_xml = response.text
-    cookie = response.headers['Set-Cookie']
     filtered_xml = _filter_script_tags(authorization_page_xml)
     root = ET.fromstring(filtered_xml)
     form = root.find('.//form')
@@ -51,16 +51,11 @@ def refresh_token(args):
         "grant": 1,
     }
     url = "{}?{}".format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
-    response = requests.post(
-        url,
-        headers={
-            'Content-type': 'application/x-www-form-urlencoded',
-            'Cookie': cookie,
-        },
-    )
+    response = session.post(url)
 
     # Stop here for now ...
-    exit(0)
+    error_message = "We want a redirect, not a {}".format(response.status_code)
+    assert response.status_code == 302, error_message
 
     authorization_code = raw_input("Code: ")
     data = {
