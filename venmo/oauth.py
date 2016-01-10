@@ -4,6 +4,7 @@ OAuth
 TODO: use oauth2 library, perhaps joestump/python-oauth2
 """
 
+import os
 import urllib
 import webbrowser
 
@@ -35,7 +36,7 @@ def _authorization_url():
 
 def get_access_token():
     try:
-        with open('ACCESS_TOKEN') as f:
+        with open(settings.ACCESS_TOKEN_FILE) as f:
             return f.read()
     except IOError:
         print("""
@@ -58,5 +59,6 @@ def refresh_token(args):
     response = requests.post(url, data)
     response_dict = response.json()
     access_token = response_dict['access_token']
-    with open('ACCESS_TOKEN', 'w') as f:
+    os.makedirs(os.path.dirname(settings.ACCESS_TOKEN_FILE))
+    with open(settings.ACCESS_TOKEN_FILE, 'w') as f:
         f.write(access_token)
