@@ -59,6 +59,10 @@ def refresh_token(args):
     response = requests.post(url, data)
     response_dict = response.json()
     access_token = response_dict['access_token']
-    os.makedirs(os.path.dirname(settings.ACCESS_TOKEN_FILE))
+    try:
+        os.makedirs(os.path.dirname(settings.ACCESS_TOKEN_FILE))
+    except OSError:
+        # It's okay if directory already exists
+        pass
     with open(settings.ACCESS_TOKEN_FILE, 'w') as f:
         f.write(access_token)
