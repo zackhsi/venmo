@@ -15,3 +15,8 @@ Installation
 ```sh
 pip install venmo
 ```
+
+Authentication
+==============
+`venmo` requires an access token to make requests on your behalf. The access
+token is written to the file "/usr/local/var/venmo/ACCESS_TOKEN"
