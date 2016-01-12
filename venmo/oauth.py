@@ -51,7 +51,10 @@ def refresh_token(args):
         "grant": 1,
     }
     url = "{}?{}".format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
-    response = session.post(url)
+    response = session.post(url, allow_redirects=False)
+
+    import pdb
+    pdb.set_trace()
 
     # Stop here for now ...
     error_message = "We want a redirect, not a {}".format(response.status_code)
