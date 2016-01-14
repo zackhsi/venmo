@@ -14,11 +14,12 @@ Refresh your venmo access token:
 """
 
 import argparse
+import json
 import urllib
 
 import requests
 
-from venmo import settings, oauth
+from venmo import oauth, settings
 
 
 def pay(args):
@@ -85,6 +86,30 @@ def _log_response(response):
     )
 
 
+def print_search(args):
+    print json.dumps(search(args), indent=4)
+
+
+def search(args):
+    response = requests.get(
+        settings.USERS_URL,
+        params={
+            'limit': 5,
+            'query': args.query,
+        }
+    )
+    users = response.json()['data']
+    results = []
+    for user in users:
+        results.append({
+            'id': user['id'],
+            'username': user['username'],
+            'display_name': user['display_name'],
+            'profile_picture_url': user['profile_picture_url'],
+        })
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -101,6 +126,10 @@ def main():
 
     parser_refresh_token = subparsers.add_parser('refresh-token')
     parser_refresh_token.set_defaults(func=oauth.refresh_token)
+
+    parser_search = subparsers.add_parser('search')
+    parser_search.add_argument("query", help="search query")
+    parser_search.set_defaults(func=print_search)
 
     args = parser.parse_args()
     args.func(args)
