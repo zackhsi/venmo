@@ -53,12 +53,9 @@ def refresh_token(args):
     url = "{}?{}".format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
     response = session.post(url, allow_redirects=False)
 
-    import pdb
-    pdb.set_trace()
-
-    # Stop here for now ...
-    error_message = "We want a redirect, not a {}".format(response.status_code)
-    assert response.status_code == 302, error_message
+    assert response.status_code == 302, "ERROR: expecting a redirect"
+    print "Redirect to: {}".format(response.headers['location'])
+    exit(0)
 
     authorization_code = raw_input("Code: ")
     data = {
