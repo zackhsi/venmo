@@ -18,7 +18,7 @@ import urllib
 
 import requests
 
-from venmo import settings, oauth
+from venmo import oauth, settings, user
 
 
 def pay(args):
@@ -33,11 +33,15 @@ def charge(args):
 def _pay_or_charge(args):
     params = {
         'note': args.note,
-        'phone': args.phone,
         'amount': args.amount,
         'access_token': oauth.get_access_token(),
         'audience': 'private',
     }
+    if args.user.startswith("@"):
+        user_id = user.id_from_username(args.user[1:])
+        params['user_id'] = user_id
+    else:
+        params['phone'] = args.user
     response = requests.post(
         _payments_url_with_params(params)
     ).json()
@@ -94,13 +98,20 @@ def main():
 
     for action in ["pay", "charge"]:
         subparser = subparsers.add_parser(action)
-        subparser.add_argument("phone", help="who to {}".format(action))
+        subparser.add_argument(
+            "user",
+            help="who to {}, either phone or username".format(action),
+        )
         subparser.add_argument("amount", help="how much to pay or charge")
         subparser.add_argument("note", help="what the request is for")
         subparser.set_defaults(func=globals()[action])
 
     parser_refresh_token = subparsers.add_parser('refresh-token')
     parser_refresh_token.set_defaults(func=oauth.refresh_token)
+
+    parser_search = subparsers.add_parser('search')
+    parser_search.add_argument("query", help="search query")
+    parser_search.set_defaults(func=user.print_search)
 
     args = parser.parse_args()
     args.func(args)
