@@ -1,12 +1,14 @@
 from setuptools import setup
 
+import venmo
+
 requirements = [
     'requests==2.9.1',
 ]
 
 setup(
     name='venmo',
-    version='0.2.2',
+    version=venmo.__version__,
     description='Venmo CLI',
     url='http://github.com/zackhsi/venmo',
     author='Zack Hsi',
