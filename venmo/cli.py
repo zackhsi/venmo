@@ -14,6 +14,9 @@ Refresh your venmo access token:
 """
 
 import argparse
+import ConfigParser
+import getpass
+import os.path
 import urllib
 
 import requests
@@ -89,6 +92,35 @@ def _log_response(response):
     )
 
 
+def configure(args):
+    """Save username and password to config file."""
+    email = raw_input("Venmo email: ")
+    password = getpass.getpass(prompt="Venmo password: ")
+
+    # TODO: grab access token and write to config
+
+    config = ConfigParser.RawConfigParser()
+    config.set(ConfigParser.DEFAULTSECT, 'password', password)
+    config.set(ConfigParser.DEFAULTSECT, 'email', email)
+    credentials_file = _expand_path(settings.CREDENTIALS_FILE)
+    # Ensure ~/.venmo/ exists
+    try:
+        os.makedirs(os.path.dirname(credentials_file))
+    except OSError:
+        pass  # It's okay if directory already exists
+    # Write credentials
+    with open(credentials_file, 'w') as configfile:
+        config.write(configfile)
+
+
+def _expand_path(path):
+    """Expand the user's home directory."""
+    if path.startswith("~"):
+        return path.replace("~", os.path.expanduser('~'))
+    else:
+        return path
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -105,6 +137,9 @@ def main():
         subparser.add_argument("amount", help="how much to pay or charge")
         subparser.add_argument("note", help="what the request is for")
         subparser.set_defaults(func=globals()[action])
+
+    parser_configure = subparsers.add_parser('configure')
+    parser_configure.set_defaults(func=configure)
 
     parser_refresh_token = subparsers.add_parser('refresh-token')
     parser_refresh_token.set_defaults(func=oauth.refresh_token)
