@@ -20,12 +20,7 @@ def configure(args):
     Entering nothing keeps the current credentials.
     """
     # Read old credentials
-    credentials_file = settings.CREDENTIALS_FILE
-    if credentials_file.startswith("~"):
-        credentials_file = credentials_file.replace("~",
-                                                    os.path.expanduser('~'))
-    config = ConfigParser.RawConfigParser()
-    config.read(credentials_file)
+    config = get_config()
     try:
         old_email = config.get(ConfigParser.DEFAULTSECT, 'email')
     except ConfigParser.NoOptionError:
@@ -50,12 +45,31 @@ def configure(args):
         config.set(ConfigParser.DEFAULTSECT, 'email', email)
     if password:
         config.set(ConfigParser.DEFAULTSECT, 'password', password)
+    set_config(config)
+
+
+def get_config():
+    config = ConfigParser.RawConfigParser()
+    config.read(_credentials_file())
+    return config
+
+
+def set_config(config):
+    credentials_file = _credentials_file()
     try:
         os.makedirs(os.path.dirname(credentials_file))
     except OSError:
         pass  # It's okay if directory already exists
     with open(credentials_file, 'w') as configfile:
         config.write(configfile)
+
+
+def _credentials_file():
+    credentials_file = settings.CREDENTIALS_FILE
+    if credentials_file.startswith("~"):
+        credentials_file = credentials_file.replace("~",
+                                                    os.path.expanduser('~'))
+    return credentials_file
 
 
 def get_access_token():
