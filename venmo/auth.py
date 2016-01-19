@@ -50,28 +50,17 @@ def configure(args):
 
 def read_config():
     config = ConfigParser.RawConfigParser()
-    config.read(_credentials_file_path())
+    config.read(settings.CREDENTIALS_FILE)
     return config
 
 
 def write_config(config):
-    credentials_file_path = _credentials_file_path()
     try:
-        os.makedirs(os.path.dirname(credentials_file_path))
+        os.makedirs(os.path.dirname(settings.CREDENTIALS_FILE))
     except OSError:
         pass  # It's okay if directory already exists
-    with open(credentials_file_path, 'w') as configfile:
+    with open(settings.CREDENTIALS_FILE, 'w') as configfile:
         config.write(configfile)
-
-
-def _credentials_file_path():
-    credentials_file_path = settings.CREDENTIALS_FILE
-    if credentials_file_path.startswith("~"):
-        credentials_file_path = credentials_file_path.replace(
-            "~",
-            os.path.expanduser('~')
-        )
-    return credentials_file_path
 
 
 def get_access_token():
