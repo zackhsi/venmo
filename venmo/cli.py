@@ -14,6 +14,9 @@ Refresh your venmo access token:
 """
 
 import argparse
+import ConfigParser
+import getpass
+import os.path
 import urllib
 
 import requests
@@ -89,6 +92,50 @@ def _log_response(response):
     )
 
 
+def configure(args):
+    """Save username and password to config file.
+
+    Entering nothing keeps the current credentials.
+    """
+    # Read old credentials
+    credentials_file = settings.CREDENTIALS_FILE
+    if credentials_file.startswith("~"):
+        credentials_file = credentials_file.replace("~",
+                                                    os.path.expanduser('~'))
+    config = ConfigParser.RawConfigParser()
+    config.read(credentials_file)
+    try:
+        old_email = config.get(ConfigParser.DEFAULTSECT, 'email')
+    except ConfigParser.NoOptionError:
+        old_email = ''
+    try:
+        old_password = config.get(ConfigParser.DEFAULTSECT, 'password')
+    except ConfigParser.NoOptionError:
+        old_password = ''
+
+    # Prompt new credentials
+    email = raw_input("Venmo email [{}]: "
+                      .format(old_email if old_email else None))
+    password = getpass.getpass(prompt="Venmo password [{}]: "
+                               .format("*"*10 if old_password else None))
+    email = email or old_email
+    password = password or old_password
+    if not any([email, password]):
+        return
+
+    # Write new credentials
+    if email:
+        config.set(ConfigParser.DEFAULTSECT, 'email', email)
+    if password:
+        config.set(ConfigParser.DEFAULTSECT, 'password', password)
+    try:
+        os.makedirs(os.path.dirname(credentials_file))
+    except OSError:
+        pass  # It's okay if directory already exists
+    with open(credentials_file, 'w') as configfile:
+        config.write(configfile)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -105,6 +152,9 @@ def main():
         subparser.add_argument("amount", help="how much to pay or charge")
         subparser.add_argument("note", help="what the request is for")
         subparser.set_defaults(func=globals()[action])
+
+    parser_configure = subparsers.add_parser('configure')
+    parser_configure.set_defaults(func=configure)
 
     parser_refresh_token = subparsers.add_parser('refresh-token')
     parser_refresh_token.set_defaults(func=oauth.refresh_token)
