@@ -21,7 +21,7 @@ import urllib
 
 import requests
 
-from venmo import oauth, settings, user
+from venmo import __version__, oauth, settings, user
 
 
 def pay(args):
@@ -162,6 +162,9 @@ def main():
     parser_search = subparsers.add_parser('search')
     parser_search.add_argument("query", help="search query")
     parser_search.set_defaults(func=user.print_search)
+
+    parser.add_argument('-v', '--version', action='version',
+                        version='%(prog)s ' + __version__)
 
     args = parser.parse_args()
     args.func(args)
