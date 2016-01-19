@@ -1,15 +1,61 @@
 """
-OAuth
+Authentication
 """
 
-import os
+import ConfigParser
 import getpass
+import os
+import os.path
 import urllib
 import xml.etree.ElementTree as ET
 
 import requests
 
 from venmo import settings
+
+
+def configure(args):
+    """Save username and password to config file.
+
+    Entering nothing keeps the current credentials.
+    """
+    # Read old credentials
+    credentials_file = settings.CREDENTIALS_FILE
+    if credentials_file.startswith("~"):
+        credentials_file = credentials_file.replace("~",
+                                                    os.path.expanduser('~'))
+    config = ConfigParser.RawConfigParser()
+    config.read(credentials_file)
+    try:
+        old_email = config.get(ConfigParser.DEFAULTSECT, 'email')
+    except ConfigParser.NoOptionError:
+        old_email = ''
+    try:
+        old_password = config.get(ConfigParser.DEFAULTSECT, 'password')
+    except ConfigParser.NoOptionError:
+        old_password = ''
+
+    # Prompt new credentials
+    email = raw_input("Venmo email [{}]: "
+                      .format(old_email if old_email else None))
+    password = getpass.getpass(prompt="Venmo password [{}]: "
+                               .format("*"*10 if old_password else None))
+    email = email or old_email
+    password = password or old_password
+    if not any([email, password]):
+        return
+
+    # Write new credentials
+    if email:
+        config.set(ConfigParser.DEFAULTSECT, 'email', email)
+    if password:
+        config.set(ConfigParser.DEFAULTSECT, 'password', password)
+    try:
+        os.makedirs(os.path.dirname(credentials_file))
+    except OSError:
+        pass  # It's okay if directory already exists
+    with open(credentials_file, 'w') as configfile:
+        config.write(configfile)
 
 
 def get_access_token():
