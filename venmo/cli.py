@@ -93,32 +93,47 @@ def _log_response(response):
 
 
 def configure(args):
-    """Save username and password to config file."""
-    email = raw_input("Venmo email: ")
-    password = getpass.getpass(prompt="Venmo password: ")
+    """Save username and password to config file.
 
-    # TODO: grab access token and write to config
-
+    Entering nothing keeps the current credentials.
+    """
+    # Read old credentials
+    credentials_file = settings.CREDENTIALS_FILE
+    if credentials_file.startswith("~"):
+        credentials_file = credentials_file.replace("~",
+                                                    os.path.expanduser('~'))
     config = ConfigParser.RawConfigParser()
-    config.set(ConfigParser.DEFAULTSECT, 'password', password)
-    config.set(ConfigParser.DEFAULTSECT, 'email', email)
-    credentials_file = _expand_path(settings.CREDENTIALS_FILE)
-    # Ensure ~/.venmo/ exists
+    config.read(credentials_file)
+    try:
+        old_email = config.get(ConfigParser.DEFAULTSECT, 'email')
+    except ConfigParser.NoOptionError:
+        old_email = ''
+    try:
+        old_password = config.get(ConfigParser.DEFAULTSECT, 'password')
+    except ConfigParser.NoOptionError:
+        old_password = ''
+
+    # Prompt new credentials
+    email = raw_input("Venmo email [{}]: "
+                      .format(old_email if old_email else None))
+    password = getpass.getpass(prompt="Venmo password [{}]: "
+                               .format("*"*10 if old_password else None))
+    email = email or old_email
+    password = password or old_password
+    if not any([email, password]):
+        return
+
+    # Write new credentials
+    if email:
+        config.set(ConfigParser.DEFAULTSECT, 'email', email)
+    if password:
+        config.set(ConfigParser.DEFAULTSECT, 'password', password)
     try:
         os.makedirs(os.path.dirname(credentials_file))
     except OSError:
         pass  # It's okay if directory already exists
-    # Write credentials
     with open(credentials_file, 'w') as configfile:
         config.write(configfile)
-
-
-def _expand_path(path):
-    """Expand the user's home directory."""
-    if path.startswith("~"):
-        return path.replace("~", os.path.expanduser('~'))
-    else:
-        return path
 
 
 def main():
