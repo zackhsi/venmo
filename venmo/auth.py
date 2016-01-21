@@ -16,40 +16,6 @@ session = singletons.session()
 
 
 def configure(args=None):
-    """Save username and password to config file.
-
-    Entering nothing keeps the current credentials.
-    """
-    # Read old credentials
-    config = read_config()
-    try:
-        old_email = config.get(ConfigParser.DEFAULTSECT, 'email')
-    except ConfigParser.NoOptionError:
-        old_email = ''
-    try:
-        old_password = config.get(ConfigParser.DEFAULTSECT, 'password')
-    except ConfigParser.NoOptionError:
-        old_password = ''
-
-    # Prompt new credentials
-    email = raw_input("Venmo email [{}]: "
-                      .format(old_email if old_email else None))
-    password = getpass.getpass(prompt="Venmo password [{}]: "
-                               .format("*"*10 if old_password else None))
-    email = email or old_email
-    password = password or old_password
-    if not any([email, password]):
-        return
-
-    # Write new credentials
-    if email:
-        config.set(ConfigParser.DEFAULTSECT, 'email', email)
-    if password:
-        config.set(ConfigParser.DEFAULTSECT, 'password', password)
-    write_config(config)
-
-
-def refresh_token(args=None):
     # Get and parse authorization webpage xml and form
     response = session.get(_authorization_url())
     authorization_page_xml = response.text
@@ -80,6 +46,9 @@ def refresh_token(args=None):
     redirect_url = response.headers['location']
     if "two-factor" in redirect_url:
         two_factor(redirect_url, auth_request, csrftoken2)
+    else:
+        print "ERROR: invalid credentials"
+        reset()
     # TODO: Why don't cookies prevent 2FA
 
 
@@ -185,12 +154,46 @@ def _filter_script_tags(input_xml):
     return '\n'.join(output_lines)
 
 
+def update_credentials():
+    """Save username and password to config file.
+
+    Entering nothing keeps the current credentials.
+    """
+    # Read old credentials
+    config = read_config()
+    try:
+        old_email = config.get(ConfigParser.DEFAULTSECT, 'email')
+    except ConfigParser.NoOptionError:
+        old_email = ''
+    try:
+        old_password = config.get(ConfigParser.DEFAULTSECT, 'password')
+    except ConfigParser.NoOptionError:
+        old_password = ''
+
+    # Prompt new credentials
+    email = raw_input("Venmo email [{}]: "
+                      .format(old_email if old_email else None))
+    password = getpass.getpass(prompt="Venmo password [{}]: "
+                               .format("*"*10 if old_password else None))
+    email = email or old_email
+    password = password or old_password
+    if not any([email, password]):
+        return
+
+    # Write new credentials
+    if email:
+        config.set(ConfigParser.DEFAULTSECT, 'email', email)
+    if password:
+        config.set(ConfigParser.DEFAULTSECT, 'password', password)
+    write_config(config)
+
+
 def get_username():
     config = read_config()
     try:
         return config.get(ConfigParser.DEFAULTSECT, 'email')
     except ConfigParser.NoOptionError:
-        configure()
+        update_credentials()
         return get_username()
 
 
@@ -199,7 +202,7 @@ def get_password():
     try:
         return config.get(ConfigParser.DEFAULTSECT, 'password')
     except ConfigParser.NoOptionError:
-        configure()
+        update_credentials()
         return get_password()
 
 
@@ -208,7 +211,7 @@ def get_access_token():
     try:
         return config.get(ConfigParser.DEFAULTSECT, 'access_token')
     except ConfigParser.NoOptionError:
-        refresh_token()
+        configure()
         return get_access_token()
 
 
@@ -225,3 +228,8 @@ def write_config(config):
         pass  # It's okay if directory already exists
     with open(settings.CREDENTIALS_FILE, 'w') as configfile:
         config.write(configfile)
+
+
+def reset():
+    config = ConfigParser.RawConfigParser()
+    write_config(config)

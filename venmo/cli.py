@@ -109,9 +109,6 @@ def main():
     parser_configure = subparsers.add_parser('configure')
     parser_configure.set_defaults(func=auth.configure)
 
-    parser_refresh_token = subparsers.add_parser('refresh-token')
-    parser_refresh_token.set_defaults(func=auth.refresh_token)
-
     parser_search = subparsers.add_parser('search')
     parser_search.add_argument("query", help="search query")
     parser_search.set_defaults(func=user.print_search)
