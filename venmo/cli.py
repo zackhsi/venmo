@@ -14,14 +14,11 @@ Refresh your venmo access token:
 """
 
 import argparse
-import ConfigParser
-import getpass
-import os.path
 import urllib
 
-import requests
+from venmo import __version__, auth, settings, singletons, user
 
-from venmo import __version__, oauth, settings, user
+session = singletons.session()
 
 
 def pay(args):
@@ -37,7 +34,7 @@ def _pay_or_charge(args):
     params = {
         'note': args.note,
         'amount': args.amount,
-        'access_token': oauth.get_access_token(),
+        'access_token': auth.get_access_token(),
         'audience': 'private',
     }
     if args.user.startswith("@"):
@@ -45,7 +42,7 @@ def _pay_or_charge(args):
         params['user_id'] = user_id
     else:
         params['phone'] = args.user
-    response = requests.post(
+    response = session.post(
         _payments_url_with_params(params)
     ).json()
     _log_response(response)
@@ -53,7 +50,7 @@ def _pay_or_charge(args):
 
 def _payments_url_with_params(params):
     return "{payments_base_url}?{params}".format(
-        payments_base_url=settings.PAYMENTS_BASE_URL,
+        payments_base_url=settings.PAYMENTS_URL,
         params=urllib.urlencode(params),
     )
 
@@ -92,50 +89,6 @@ def _log_response(response):
     )
 
 
-def configure(args):
-    """Save username and password to config file.
-
-    Entering nothing keeps the current credentials.
-    """
-    # Read old credentials
-    credentials_file = settings.CREDENTIALS_FILE
-    if credentials_file.startswith("~"):
-        credentials_file = credentials_file.replace("~",
-                                                    os.path.expanduser('~'))
-    config = ConfigParser.RawConfigParser()
-    config.read(credentials_file)
-    try:
-        old_email = config.get(ConfigParser.DEFAULTSECT, 'email')
-    except ConfigParser.NoOptionError:
-        old_email = ''
-    try:
-        old_password = config.get(ConfigParser.DEFAULTSECT, 'password')
-    except ConfigParser.NoOptionError:
-        old_password = ''
-
-    # Prompt new credentials
-    email = raw_input("Venmo email [{}]: "
-                      .format(old_email if old_email else None))
-    password = getpass.getpass(prompt="Venmo password [{}]: "
-                               .format("*"*10 if old_password else None))
-    email = email or old_email
-    password = password or old_password
-    if not any([email, password]):
-        return
-
-    # Write new credentials
-    if email:
-        config.set(ConfigParser.DEFAULTSECT, 'email', email)
-    if password:
-        config.set(ConfigParser.DEFAULTSECT, 'password', password)
-    try:
-        os.makedirs(os.path.dirname(credentials_file))
-    except OSError:
-        pass  # It's okay if directory already exists
-    with open(credentials_file, 'w') as configfile:
-        config.write(configfile)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -154,10 +107,7 @@ def main():
         subparser.set_defaults(func=globals()[action])
 
     parser_configure = subparsers.add_parser('configure')
-    parser_configure.set_defaults(func=configure)
-
-    parser_refresh_token = subparsers.add_parser('refresh-token')
-    parser_refresh_token.set_defaults(func=oauth.refresh_token)
+    parser_configure.set_defaults(func=auth.configure)
 
     parser_search = subparsers.add_parser('search')
     parser_search.add_argument("query", help="search query")

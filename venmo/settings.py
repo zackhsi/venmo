@@ -1,7 +1,20 @@
+import os
+
+
+# OAuth
 CLIENT_ID = '2667'
 CLIENT_SECRET = 'srDrmU3yf452HuFF63HqHEt25pa5DexZ'
-BASE_URL = "https://api.venmo.com/v1"
-PAYMENTS_BASE_URL = "{base_url}/payments".format(base_url=BASE_URL)
-ACCESS_TOKEN_FILE = "/usr/local/var/venmo/ACCESS_TOKEN"
+
+# Files
+CREDENTIALS_FILE = os.path.join(os.path.expanduser("~"),
+                                ".venmo", "credentials")
+COOKIES_FILE = os.path.join(os.path.expanduser("~"),
+                            ".venmo", "cookies")
+
+# URLs
+ACCESS_TOKEN_URL = "https://api.venmo.com/v1/oauth/access_token"
+AUTHORIZATION_URL = "https://api.venmo.com/v1/oauth/authorize"
+PAYMENTS_URL = "https://api.venmo.com/v1/payments"
+TWO_FACTOR_URL = "https://venmo.com/api/v5/two_factor/token"
+TWO_FACTOR_AUTHORIZATION_URL = "https://venmo.com/authorize"
 USERS_URL = "https://api.venmo.com/v1/users"
-CREDENTIALS_FILE = "~/.venmo/credentials"

@@ -4,7 +4,7 @@ Venmo
 Pay or charge people on the command line!
 
 ```sh
-venmo pay 19495551234 23.19 "Thanks for the beer <3"
+venmo pay @zackhsi 23.19 "Thanks for the beer <3"
 venmo charge 19495551234 23.19 "That beer wasn't free!"
 ```
 
@@ -16,7 +16,30 @@ Installation
 pip install venmo
 ```
 
-Authentication
---------------
-`venmo` requires an access token to make requests on your behalf. The access
-token is written to the file "/usr/local/var/venmo/ACCESS_TOKEN"
+Setup
+-----
+Set up venmo by running:
+
+```sh
+venmo configure
+
+> Venmo email [None]: zackhsi@gmail.com
+> Venmo password [None]:
+> Verification code: 908126  # for 2 factor authentication
+```
+
+That's it!
+
+Contributing
+------------
+Pull requests welcome! To get started, first clone the repository:
+
+```sh
+git clone git@github.com:zackhsi/venmo.git
+```
+
+Then install the development package:
+
+```sh
+python setup.py develop
+```
