@@ -66,20 +66,7 @@ def write_config(config):
         config.write(configfile)
 
 
-def get_access_token():
-    try:
-        with open(settings.ACCESS_TOKEN_FILE) as f:
-            return f.read()
-    except IOError:
-        print("""
-    Venmo requires an access token. Please run:
-
-        venmo refresh-token
-""")
-        exit(1)
-
-
-def refresh_token(args):
+def refresh_token(args=None):
     # Get and parse authorization webpage xml and form
     response = session.get(_authorization_url())
     authorization_page_xml = response.text
@@ -152,10 +139,10 @@ def two_factor(redirect_url, auth_request, csrftoken2):
     code = location.split("code=")[1]
     access_token = retrieve_access_token(code)
 
+    # Save access token
     config = read_config()
     config.set(ConfigParser.DEFAULTSECT, 'access_token', access_token)
     write_config(config)
-    print "Saved access token!"
 
 
 def extract_otp_secret(text):
@@ -231,3 +218,12 @@ def get_password():
     except ConfigParser.NoOptionError:
         configure()
         return get_password()
+
+
+def get_access_token():
+    config = read_config()
+    try:
+        return config.get(ConfigParser.DEFAULTSECT, 'access_token')
+    except ConfigParser.NoOptionError:
+        refresh_token()
+        return get_access_token()

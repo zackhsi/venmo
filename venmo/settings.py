@@ -6,7 +6,6 @@ CLIENT_ID = '2667'
 CLIENT_SECRET = 'srDrmU3yf452HuFF63HqHEt25pa5DexZ'
 
 # Files
-ACCESS_TOKEN_FILE = "/usr/local/var/venmo/ACCESS_TOKEN"
 CREDENTIALS_FILE = os.path.join(os.path.expanduser("~"),
                                 ".venmo", "credentials")
 
