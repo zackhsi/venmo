@@ -16,9 +16,9 @@ Refresh your venmo access token:
 import argparse
 import urllib
 
-import requests
+from venmo import __version__, auth, settings, singletons, user
 
-from venmo import __version__, auth, settings, user
+session = singletons.session()
 
 
 def pay(args):
@@ -42,7 +42,7 @@ def _pay_or_charge(args):
         params['user_id'] = user_id
     else:
         params['phone'] = args.user
-    response = requests.post(
+    response = session.post(
         _payments_url_with_params(params)
     ).json()
     _log_response(response)

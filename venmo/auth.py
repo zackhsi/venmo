@@ -10,7 +10,7 @@ import re
 import urllib
 import xml.etree.ElementTree as ET
 
-from venmo import cookies, settings, singletons
+from venmo import settings, singletons
 
 session = singletons.session()
 
@@ -126,9 +126,6 @@ def two_factor(redirect_url, auth_request, csrftoken2):
     config = read_config()
     config.set(ConfigParser.DEFAULTSECT, 'access_token', access_token)
     write_config(config)
-
-    # Save cookies
-    cookies.save(session.cookies)
 
 
 def extract_otp_secret(text):
