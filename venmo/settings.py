@@ -14,4 +14,5 @@ CREDENTIALS_FILE = os.path.join(os.path.expanduser("~"),
 ACCESS_TOKEN_URL = "https://api.venmo.com/v1/oauth/access_token"
 AUTHORIZATION_URL = "https://api.venmo.com/v1/oauth/authorize"
 PAYMENTS_URL = "https://api.venmo.com/v1/payments"
+TWO_FACTOR_URL = "https://venmo.com/api/v5/two_factor/token"
 USERS_URL = "https://api.venmo.com/v1/users"

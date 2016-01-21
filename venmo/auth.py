@@ -6,12 +6,15 @@ import ConfigParser
 import getpass
 import os
 import os.path
+import re
 import urllib
 import xml.etree.ElementTree as ET
 
 import requests
 
 from venmo import settings
+
+session = requests.Session()
 
 
 def configure(args=None):
@@ -78,7 +81,6 @@ def get_access_token():
 
 def refresh_token(args):
     # Get and parse authorization webpage xml and form
-    session = requests.Session()
     response = session.get(_authorization_url())
     authorization_page_xml = response.text
     filtered_xml = _filter_script_tags(authorization_page_xml)
@@ -105,8 +107,10 @@ def refresh_token(args):
     response = session.post(url, allow_redirects=False)
 
     assert response.status_code == 302, "ERROR: expecting a redirect"
-    print "Redirect to: {}".format(response.headers['location'])
-    exit(0)
+    redirect_url = response.headers['location']
+    if "two-factor" in redirect_url:
+        two_factor(redirect_url)
+        exit(0)
 
     authorization_code = raw_input("Code: ")
     data = {
@@ -124,6 +128,31 @@ def refresh_token(args):
         pass
     with open(settings.ACCESS_TOKEN_FILE, 'w') as f:
         f.write(access_token)
+
+
+def two_factor(redirect_url):
+    response = session.get(redirect_url)
+    secret = extract_otp_secret(response.text)
+
+    headers = {"Venmo-Otp-Secret": secret}
+    data = {"via": "sms"}
+    url = "{}?{}".format(settings.TWO_FACTOR_URL, urllib.urlencode(data))
+    response = session.post(
+        url,
+        headers=headers,
+    )
+    assert response.status_code == 200, "Post to 2FA failed"
+    assert response.json()['data']['status'] == 'sent', "SMS did not send"
+
+
+def extract_otp_secret(text):
+    pattern = re.compile('data-otp-secret="(\w*)"')
+    for line in text.splitlines():
+        if 'data-otp-secret' in line:
+            match = pattern.search(line)
+            return match.group(1)
+    raise Exception('msg="Could not extract data-otp-secret" text={}'
+                    .format(text))
 
 
 def _authorization_url():
