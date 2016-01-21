@@ -14,7 +14,7 @@ import requests
 from venmo import settings
 
 
-def configure(args):
+def configure(args=None):
     """Save username and password to config file.
 
     Entering nothing keeps the current credentials.
@@ -94,8 +94,8 @@ def refresh_token(args):
 
     # Submit form
     data = {
-        "username": _prompt_username(),
-        "password": _prompt_password(),
+        "username": get_username(),
+        "password": get_password(),
         "web_redirect_url": web_redirect_url,
         "csrftoken2": csrftoken2,
         "auth_request": auth_request,
@@ -161,9 +161,19 @@ def _filter_script_tags(input_xml):
     return '\n'.join(output_lines)
 
 
-def _prompt_username():
-    return raw_input("Venmo email: ")
+def get_username():
+    config = read_config()
+    try:
+        return config.get(ConfigParser.DEFAULTSECT, 'email')
+    except ConfigParser.NoOptionError:
+        configure()
+        return get_username()
 
 
-def _prompt_password():
-    return getpass.getpass(prompt="Venmo password: ")
+def get_password():
+    config = read_config()
+    try:
+        return config.get(ConfigParser.DEFAULTSECT, 'password')
+    except ConfigParser.NoOptionError:
+        configure()
+        return get_password()
