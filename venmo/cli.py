@@ -5,12 +5,12 @@ Venmo CLI.
 
 Pay or charge people via the Venmo API:
 
-    venmo pay 19495551234 23.19 "Thanks for the beer <3"
+    venmo pay @zackhsi 23.19 "Thanks for the beer <3"
     venmo charge 19495551234 23.19 "That beer wasn't free!"
 
-Refresh your venmo access token:
+Configure with:
 
-    venmo refresh-token
+    venmo configure
 """
 
 import argparse
