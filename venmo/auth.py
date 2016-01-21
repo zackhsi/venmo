@@ -10,11 +10,9 @@ import re
 import urllib
 import xml.etree.ElementTree as ET
 
-import requests
+from venmo import cookies, settings, singletons
 
-from venmo import settings
-
-session = requests.Session()
+session = singletons.session()
 
 
 def configure(args=None):
@@ -51,21 +49,6 @@ def configure(args=None):
     write_config(config)
 
 
-def read_config():
-    config = ConfigParser.RawConfigParser()
-    config.read(settings.CREDENTIALS_FILE)
-    return config
-
-
-def write_config(config):
-    try:
-        os.makedirs(os.path.dirname(settings.CREDENTIALS_FILE))
-    except OSError:
-        pass  # It's okay if directory already exists
-    with open(settings.CREDENTIALS_FILE, 'w') as configfile:
-        config.write(configfile)
-
-
 def refresh_token(args=None):
     # Get and parse authorization webpage xml and form
     response = session.get(_authorization_url())
@@ -97,7 +80,7 @@ def refresh_token(args=None):
     redirect_url = response.headers['location']
     if "two-factor" in redirect_url:
         two_factor(redirect_url, auth_request, csrftoken2)
-    # TODO: save cookies
+    # TODO: Why don't cookies prevent 2FA
 
 
 def two_factor(redirect_url, auth_request, csrftoken2):
@@ -143,6 +126,9 @@ def two_factor(redirect_url, auth_request, csrftoken2):
     config = read_config()
     config.set(ConfigParser.DEFAULTSECT, 'access_token', access_token)
     write_config(config)
+
+    # Save cookies
+    cookies.save(session.cookies)
 
 
 def extract_otp_secret(text):
@@ -227,3 +213,18 @@ def get_access_token():
     except ConfigParser.NoOptionError:
         refresh_token()
         return get_access_token()
+
+
+def read_config():
+    config = ConfigParser.RawConfigParser()
+    config.read(settings.CREDENTIALS_FILE)
+    return config
+
+
+def write_config(config):
+    try:
+        os.makedirs(os.path.dirname(settings.CREDENTIALS_FILE))
+    except OSError:
+        pass  # It's okay if directory already exists
+    with open(settings.CREDENTIALS_FILE, 'w') as configfile:
+        config.write(configfile)
