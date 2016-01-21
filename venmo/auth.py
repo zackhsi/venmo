@@ -16,6 +16,17 @@ session = singletons.session()
 
 
 def configure(args=None):
+    """Get venmo ready to make payments.
+
+    First, set username and password. If those change, then get access token.
+    If that fails, unset username and password.
+
+    Return whether or not we save an access token.
+    """
+    changed = update_credentials()
+    if not changed:
+        return
+
     # Get and parse authorization webpage xml and form
     response = session.get(_authorization_url())
     authorization_page_xml = response.text
@@ -41,18 +52,25 @@ def configure(args=None):
     }
     url = "{}?{}".format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
     response = session.post(url, allow_redirects=False)
+    if response.status_code != 302:
+        print "ERROR: expecting a redirect"
+        return False
 
-    assert response.status_code == 302, "ERROR: expecting a redirect"
     redirect_url = response.headers['location']
     if "two-factor" in redirect_url:
-        two_factor(redirect_url, auth_request, csrftoken2)
+        return two_factor(redirect_url, auth_request, csrftoken2)
     else:
         print "ERROR: invalid credentials"
         reset()
+        return False
     # TODO: Why don't cookies prevent 2FA
 
 
 def two_factor(redirect_url, auth_request, csrftoken2):
+    """Do the two factor auth dance.
+
+    Return whether or not we save an access token.
+    """
     # Get two factor page
     response = session.get(redirect_url)
 
@@ -84,7 +102,9 @@ def two_factor(redirect_url, auth_request, csrftoken2):
         json=data,
         allow_redirects=False,
     )
-    assert response.status_code == 200, "ERROR: verification code failed"
+    if response.status_code != 200:
+        print "ERROR: verification code failed"
+        return False
 
     # Retrieve access token
     location = response.json()['location']
@@ -95,6 +115,7 @@ def two_factor(redirect_url, auth_request, csrftoken2):
     config = read_config()
     config.set(ConfigParser.DEFAULTSECT, 'access_token', access_token)
     write_config(config)
+    return True
 
 
 def extract_otp_secret(text):
@@ -157,7 +178,8 @@ def _filter_script_tags(input_xml):
 def update_credentials():
     """Save username and password to config file.
 
-    Entering nothing keeps the current credentials.
+    Entering nothing keeps the current credentials. Returns whether or not
+    the credentials changed.
     """
     # Read old credentials
     config = read_config()
@@ -177,8 +199,15 @@ def update_credentials():
                                .format("*"*10 if old_password else None))
     email = email or old_email
     password = password or old_password
-    if not any([email, password]):
-        return
+
+    noop = email == old_email and password == old_password
+    incomplete = not email or not password
+    if noop:
+        print "WARN: credentials unchanged"
+        return False
+    if incomplete:
+        print "WARN: credentials incomplete"
+        return False
 
     # Write new credentials
     if email:
@@ -186,24 +215,17 @@ def update_credentials():
     if password:
         config.set(ConfigParser.DEFAULTSECT, 'password', password)
     write_config(config)
+    return True
 
 
 def get_username():
     config = read_config()
-    try:
-        return config.get(ConfigParser.DEFAULTSECT, 'email')
-    except ConfigParser.NoOptionError:
-        update_credentials()
-        return get_username()
+    return config.get(ConfigParser.DEFAULTSECT, 'email')
 
 
 def get_password():
     config = read_config()
-    try:
-        return config.get(ConfigParser.DEFAULTSECT, 'password')
-    except ConfigParser.NoOptionError:
-        update_credentials()
-        return get_password()
+    return config.get(ConfigParser.DEFAULTSECT, 'password')
 
 
 def get_access_token():
@@ -211,8 +233,11 @@ def get_access_token():
     try:
         return config.get(ConfigParser.DEFAULTSECT, 'access_token')
     except ConfigParser.NoOptionError:
-        configure()
-        return get_access_token()
+        success = configure()
+        if success:
+            return get_access_token()
+        else:
+            return None
 
 
 def read_config():

@@ -31,10 +31,13 @@ def charge(args):
 
 
 def _pay_or_charge(args):
+    access_token = auth.get_access_token()
+    if not access_token:
+        return
     params = {
         'note': args.note,
         'amount': args.amount,
-        'access_token': auth.get_access_token(),
+        'access_token': access_token,
         'audience': 'private',
     }
     if args.user.startswith("@"):
