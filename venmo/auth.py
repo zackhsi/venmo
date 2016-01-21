@@ -109,33 +109,21 @@ def refresh_token(args):
     assert response.status_code == 302, "ERROR: expecting a redirect"
     redirect_url = response.headers['location']
     if "two-factor" in redirect_url:
-        two_factor(redirect_url)
-        exit(0)
-
-    authorization_code = raw_input("Code: ")
-    data = {
-        "client_id": settings.CLIENT_ID,
-        "client_secret": settings.CLIENT_SECRET,
-        "code": authorization_code,
-    }
-    response = requests.post(settings.ACCESS_TOKEN_URL, data)
-    response_dict = response.json()
-    access_token = response_dict['access_token']
-    try:
-        os.makedirs(os.path.dirname(settings.ACCESS_TOKEN_FILE))
-    except OSError:
-        # It's okay if directory already exists
-        pass
-    with open(settings.ACCESS_TOKEN_FILE, 'w') as f:
-        f.write(access_token)
+        two_factor(redirect_url, auth_request, csrftoken2)
+    # TODO: save cookies
 
 
-def two_factor(redirect_url):
+def two_factor(redirect_url, auth_request, csrftoken2):
+    # Get two factor page
     response = session.get(redirect_url)
-    secret = extract_otp_secret(response.text)
 
+    # Send SMS
+    secret = extract_otp_secret(response.text)
     headers = {"Venmo-Otp-Secret": secret}
-    data = {"via": "sms"}
+    data = {
+        "via": "sms",
+        "csrftoken2": csrftoken2,
+    }
     url = "{}?{}".format(settings.TWO_FACTOR_URL, urllib.urlencode(data))
     response = session.post(
         url,
@@ -143,6 +131,31 @@ def two_factor(redirect_url):
     )
     assert response.status_code == 200, "Post to 2FA failed"
     assert response.json()['data']['status'] == 'sent', "SMS did not send"
+
+    # Submit verification code
+    verification_code = raw_input("Verification code: ")
+    headers['Venmo-Otp'] = verification_code
+    data = {
+        "auth_request": auth_request,
+        "csrftoken2": csrftoken2,
+    }
+    response = session.post(
+        settings.TWO_FACTOR_AUTHORIZATION_URL,
+        headers=headers,
+        json=data,
+        allow_redirects=False,
+    )
+    assert response.status_code == 200, "ERROR: verification code failed"
+
+    # Retrieve access token
+    location = response.json()['location']
+    code = location.split("code=")[1]
+    access_token = retrieve_access_token(code)
+
+    config = read_config()
+    config.set(ConfigParser.DEFAULTSECT, 'access_token', access_token)
+    write_config(config)
+    print "Saved access token!"
 
 
 def extract_otp_secret(text):
@@ -153,6 +166,18 @@ def extract_otp_secret(text):
             return match.group(1)
     raise Exception('msg="Could not extract data-otp-secret" text={}'
                     .format(text))
+
+
+def retrieve_access_token(code):
+    data = {
+        "client_id": settings.CLIENT_ID,
+        "client_secret": settings.CLIENT_SECRET,
+        "code": code,
+    }
+    response = session.post(settings.ACCESS_TOKEN_URL, data)
+    response_dict = response.json()
+    access_token = response_dict['access_token']
+    return access_token
 
 
 def _authorization_url():
