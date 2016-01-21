@@ -25,7 +25,21 @@ venmo configure
 
 > Venmo email [None]: zackhsi@gmail.com
 > Venmo password [None]:
-> Verification code: 908126
+> Verification code: 908126  # for 2 factor authentication
 ```
 
 That's it!
+
+Contributing
+------------
+Pull requests welcome! To get started, first clone the repository:
+
+```sh
+git clone git@github.com:zackhsi/venmo.git
+```
+
+Then install the development package:
+
+```sh
+python setup.py develop
+```
