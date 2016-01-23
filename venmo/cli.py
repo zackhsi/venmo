@@ -14,7 +14,9 @@ Configure with:
 """
 
 import argparse
+import os
 import urllib
+from datetime import datetime
 
 from venmo import __version__, auth, settings, singletons, user
 
@@ -92,6 +94,28 @@ def _log_response(response):
     )
 
 
+def status(args):
+    print "\n".join([_version(), _credentials()])
+
+
+def _version():
+    return "Version {}".format(__version__)
+
+
+def _credentials():
+    try:
+        updated_at = os.path.getmtime(settings.CREDENTIALS_FILE)
+        updated_at = datetime.fromtimestamp(updated_at)
+        updated_at = updated_at.strftime("%Y-%m-%d %H:%M")
+        return """Credentials (updated {updated_at}):
+    User: {user}
+    Token: {token}""".format(updated_at=updated_at,
+                             user=auth.get_username(),
+                             token=auth.get_access_token())
+    except OSError:
+        return "No credentials"
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -115,6 +139,9 @@ def main():
     parser_search = subparsers.add_parser('search')
     parser_search.add_argument("query", help="search query")
     parser_search.set_defaults(func=user.print_search)
+
+    parser_status = subparsers.add_parser('status')
+    parser_status.set_defaults(func=status)
 
     parser.add_argument('-v', '--version', action='version',
                         version='%(prog)s ' + __version__)
