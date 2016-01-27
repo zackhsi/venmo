@@ -7,10 +7,6 @@ Pay or charge people via the Venmo API:
 
     venmo pay @zackhsi 23.19 "Thanks for the beer <3"
     venmo charge 19495551234 23.19 "That beer wasn't free!"
-
-Configure with:
-
-    venmo configure
 """
 
 import argparse
@@ -58,7 +54,8 @@ def main():
     subparsers = parser.add_subparsers()
 
     for action in ["pay", "charge"]:
-        subparser = subparsers.add_parser(action)
+        subparser = subparsers.add_parser(action,
+                                          help='{} someone'.format(action))
         subparser.add_argument(
             "user",
             help="who to {}, either phone or username".format(action),
@@ -67,17 +64,18 @@ def main():
         subparser.add_argument("note", help="what the request is for")
         subparser.set_defaults(func=getattr(payment, action))
 
-    parser_configure = subparsers.add_parser('configure')
+    parser_configure = subparsers.add_parser('configure',
+                                             help="set up credentials")
     parser_configure.set_defaults(func=auth.configure)
 
-    parser_search = subparsers.add_parser('search')
+    parser_search = subparsers.add_parser('search', help="search users")
     parser_search.add_argument("query", help="search query")
     parser_search.set_defaults(func=user.print_search)
 
-    parser_status = subparsers.add_parser('status')
+    parser_status = subparsers.add_parser('status', help="get status")
     parser_status.set_defaults(func=status)
 
-    parser_reset = subparsers.add_parser('reset')
+    parser_reset = subparsers.add_parser('reset', help="reset saved data")
     parser_reset.set_defaults(func=auth.reset)
 
     parser.add_argument('-v', '--version', action='version',
