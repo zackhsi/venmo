@@ -7,6 +7,7 @@ import getpass
 import os
 import os.path
 import re
+import shutil
 import urllib
 import xml.etree.ElementTree as ET
 
@@ -23,54 +24,50 @@ def configure(args=None):
 
     Return whether or not we save an access token.
     """
-    changed = update_credentials()
-    if not changed:
-        return
-
-    # Get and parse authorization webpage xml and form
-    response = session.get(_authorization_url())
-    authorization_page_xml = response.text
-    filtered_xml = _filter_script_tags(authorization_page_xml)
-    root = ET.fromstring(filtered_xml)
-    form = root.find('.//form')
-    for child in form:
-        if child.attrib.get('name') == 'csrftoken2':
-            csrftoken2 = child.attrib['value']
-        if child.attrib.get('name') == 'auth_request':
-            auth_request = child.attrib['value']
-        if child.attrib.get('name') == 'web_redirect_url':
-            web_redirect_url = child.attrib['value']
-
-    # Submit form
-    data = {
-        "username": get_username(),
-        "password": get_password(),
-        "web_redirect_url": web_redirect_url,
-        "csrftoken2": csrftoken2,
-        "auth_request": auth_request,
-        "grant": 1,
-    }
-    url = "{}?{}".format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
-    response = session.post(url, allow_redirects=False)
-    if response.status_code != 302:
-        print "ERROR: expecting a redirect"
+    # Update credentials
+    credentials = update_credentials()
+    if not credentials:
         return False
-
-    redirect_url = response.headers['location']
-    if "two-factor" in redirect_url:
-        return two_factor(redirect_url, auth_request, csrftoken2)
     else:
-        print "ERROR: invalid credentials"
-        reset()
+        email, password = credentials
+
+    # Log in to Auto
+    success = submit_credentials(email, password)
+    if not success:
         return False
-    # TODO: Why don't cookies prevent 2FA
+    else:
+        redirect_url, auth_request, csrftoken2 = success
+
+    # 2FA is expected because issue #23
+    if "two-factor" not in redirect_url:
+        print "ERROR: invalid credentials"
+        return False
+
+    # Write email password
+    config = read_config()
+    config.set(ConfigParser.DEFAULTSECT, 'email', email)
+    config.set(ConfigParser.DEFAULTSECT, 'password', password)
+    write_config(config)
+
+    # Do 2FA
+    access_token = two_factor(redirect_url, auth_request, csrftoken2)
+    if not access_token:
+        return False
+
+    # Write access token
+    config = read_config()
+    config.set(ConfigParser.DEFAULTSECT, 'access_token', access_token)
+    write_config(config)
+    return True
 
 
 def two_factor(redirect_url, auth_request, csrftoken2):
     """Do the two factor auth dance.
 
-    Return whether or not we save an access token.
+    Return access_token or False.
     """
+    print "Sending SMS verification ..."
+
     # Get two factor page
     response = session.get(redirect_url)
 
@@ -89,8 +86,13 @@ def two_factor(redirect_url, auth_request, csrftoken2):
     assert response.status_code == 200, "Post to 2FA failed"
     assert response.json()['data']['status'] == 'sent', "SMS did not send"
 
-    # Submit verification code
+    # Prompt verification code
     verification_code = raw_input("Verification code: ")
+    if not verification_code:
+        print "ERROR: verification code required"
+        return False
+
+    # Submit verification code
     headers['Venmo-Otp'] = verification_code
     data = {
         "auth_request": auth_request,
@@ -110,12 +112,7 @@ def two_factor(redirect_url, auth_request, csrftoken2):
     location = response.json()['location']
     code = location.split("code=")[1]
     access_token = retrieve_access_token(code)
-
-    # Save access token
-    config = read_config()
-    config.set(ConfigParser.DEFAULTSECT, 'access_token', access_token)
-    write_config(config)
-    return True
+    return access_token
 
 
 def extract_otp_secret(text):
@@ -200,27 +197,54 @@ def update_credentials():
     email = email or old_email
     password = password or old_password
 
-    noop = email == old_email and password == old_password
     incomplete = not email or not password
-    if noop:
-        print "WARN: credentials unchanged"
-        return False
     if incomplete:
         print "WARN: credentials incomplete"
         return False
 
-    # Write new credentials
-    if email:
-        config.set(ConfigParser.DEFAULTSECT, 'email', email)
-    if password:
-        config.set(ConfigParser.DEFAULTSECT, 'password', password)
-    write_config(config)
-    return True
+    return email, password
+
+
+def submit_credentials(email, password):
+    # Get and parse authorization webpage xml and form
+    response = session.get(_authorization_url())
+    authorization_page_xml = response.text
+    filtered_xml = _filter_script_tags(authorization_page_xml)
+    root = ET.fromstring(filtered_xml)
+    form = root.find('.//form')
+    for child in form:
+        if child.attrib.get('name') == 'csrftoken2':
+            csrftoken2 = child.attrib['value']
+        if child.attrib.get('name') == 'auth_request':
+            auth_request = child.attrib['value']
+        if child.attrib.get('name') == 'web_redirect_url':
+            web_redirect_url = child.attrib['value']
+
+    # Submit form
+    data = {
+        "username": email,
+        "password": password,
+        "web_redirect_url": web_redirect_url,
+        "csrftoken2": csrftoken2,
+        "auth_request": auth_request,
+        "grant": 1,
+    }
+    url = "{}?{}".format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
+    response = session.post(url, allow_redirects=False)
+    if response.status_code != 302:
+        print "ERROR: expecting a redirect"
+        return False
+
+    redirect_url = response.headers['location']
+    return redirect_url, auth_request, csrftoken2
 
 
 def get_username():
     config = read_config()
-    return config.get(ConfigParser.DEFAULTSECT, 'email')
+    try:
+        return config.get(ConfigParser.DEFAULTSECT, 'email')
+    except ConfigParser.NoOptionError:
+        return None
 
 
 def get_password():
@@ -233,11 +257,7 @@ def get_access_token():
     try:
         return config.get(ConfigParser.DEFAULTSECT, 'access_token')
     except ConfigParser.NoOptionError:
-        success = configure()
-        if success:
-            return get_access_token()
-        else:
-            return None
+        return None
 
 
 def read_config():
@@ -255,6 +275,6 @@ def write_config(config):
         config.write(configfile)
 
 
-def reset():
-    config = ConfigParser.RawConfigParser()
-    write_config(config)
+def reset(args=None):
+    """rm -rf ~/.venmo"""
+    shutil.rmtree(settings.DOT_VENMO)

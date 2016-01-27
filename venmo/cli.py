@@ -143,6 +143,9 @@ def main():
     parser_status = subparsers.add_parser('status')
     parser_status.set_defaults(func=status)
 
+    parser_reset = subparsers.add_parser('reset')
+    parser_reset.set_defaults(func=auth.reset)
+
     parser.add_argument('-v', '--version', action='version',
                         version='%(prog)s ' + __version__)
 
