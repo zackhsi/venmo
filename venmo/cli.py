@@ -21,6 +21,14 @@ from venmo import __version__, auth, payment, settings, user
 
 
 def status(args):
+    """Print out system status
+
+    $ venmo status
+    Version 0.3.2
+    Credentials (updated 2016-01-26 19:48):
+        User: youremailaddress
+        Token: youraccesstoken
+    """
     print "\n".join([_version(), _credentials()])
 
 
