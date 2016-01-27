@@ -5,8 +5,8 @@ Venmo CLI.
 
 Pay or charge people via the Venmo API:
 
-    venmo pay @zackhsi 23.19 "Thanks for the beer <3"
-    venmo charge 19495551234 23.19 "That beer wasn't free!"
+  venmo pay @zackhsi 23.19 "Thanks for the beer <3"
+  venmo charge 19495551234 23.19 "That beer wasn't free!"
 """
 
 import argparse
