@@ -35,7 +35,11 @@ def charge(args):
 def _pay_or_charge(args):
     access_token = auth.get_access_token()
     if not access_token:
-        return
+        print """ERROR: no access token. Configuring ..."""
+        if not auth.configure():
+            return
+        access_token = auth.get_access_token()
+
     params = {
         'note': args.note,
         'amount': args.amount,
