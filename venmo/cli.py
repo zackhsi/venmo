@@ -46,7 +46,7 @@ def _credentials():
         return "No credentials"
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -83,6 +83,13 @@ def main():
 
     args = parser.parse_args()
     args.func(args)
+
+
+def main():
+    try:
+        parse_args()
+    except KeyboardInterrupt:
+        print ""
 
 
 if __name__ == '__main__':
