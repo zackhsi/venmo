@@ -76,9 +76,5 @@ def _log_response(response):
         user = target[target['type']],
     note = payment['note']
 
-    print 'Successfully {payment_action} {user} ${amount} for "{note}"'.format(
-        payment_action=payment_action,
-        user=user,
-        amount=amount,
-        note=note,
-    )
+    print ('Successfully {payment_action} {user} ${amount:.2f} for "{note}"'
+           .format(**locals()))
