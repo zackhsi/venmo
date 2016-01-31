@@ -13,7 +13,7 @@ import argparse
 import os
 from datetime import datetime
 
-from venmo import __version__, auth, payment, settings, user
+from venmo import __version__, auth, payment, settings, types, user
 
 
 def status(args):
@@ -60,7 +60,8 @@ def parse_args():
             "user",
             help="who to {}, either phone or username".format(action),
         )
-        subparser.add_argument("amount", help="how much to pay or charge")
+        subparser.add_argument("amount", type=types.positive_string,
+                               help="how much to pay or charge")
         subparser.add_argument("note", help="what the request is for")
         subparser.set_defaults(func=getattr(payment, action))
 
