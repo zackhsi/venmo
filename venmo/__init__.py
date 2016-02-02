@@ -2,7 +2,7 @@ import atexit
 
 from venmo import cookies, singletons
 
-__version__ = '0.3.4'
+from venmo._version import __version__  # noqa
 
 
 def exit_handler():
