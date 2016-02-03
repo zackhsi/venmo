@@ -6,8 +6,6 @@ import json
 
 from venmo import settings, singletons
 
-session = singletons.session()
-
 
 def id_from_username(username):
     for u in search(username):
@@ -21,7 +19,7 @@ def print_search(args):
 
 
 def search(query):
-    response = session.get(
+    response = singletons.session().get(
         settings.USERS_URL,
         params={
             'limit': 5,

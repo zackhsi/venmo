@@ -4,9 +4,7 @@ Payment
 
 import urllib
 
-from venmo import auth, settings, singletons, user
-
-session = singletons.session()
+from venmo import auth, log, settings, singletons, user
 
 
 def pay(args):
@@ -21,7 +19,7 @@ def charge(args):
 def _pay_or_charge(args):
     access_token = auth.get_access_token()
     if not access_token:
-        print """ERROR: no access token. Configuring ..."""
+        log.warn("No access token. Configuring ...")
         if not auth.configure():
             return
         access_token = auth.get_access_token()
@@ -33,14 +31,18 @@ def _pay_or_charge(args):
         'audience': 'private',
     }
     if args.user.startswith("@"):
-        user_id = user.id_from_username(args.user[1:])
-        params['user_id'] = user_id
+        username = args.user[1:]
+        user_id = user.id_from_username(username.lower())
+        if not user_id:
+            log.error("Could not find user @{}".format(username))
+            return
+        params['user_id'] = user_id.lower()
     else:
         params['phone'] = args.user
-    response = session.post(
+    response = singletons.session().post(
         _payments_url_with_params(params)
     ).json()
-    _log_response(response)
+    _print_response(response)
 
 
 def _payments_url_with_params(params):
@@ -50,11 +52,11 @@ def _payments_url_with_params(params):
     )
 
 
-def _log_response(response):
+def _print_response(response):
     if 'error' in response:
         message = response['error']['message']
         code = response['error']['code']
-        print 'message="{}" code={}'.format(message, code)
+        log.error('message="{}" code={}'.format(message, code))
         return
 
     payment = response['data']['payment']

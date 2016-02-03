@@ -1,11 +1,8 @@
-import atexit
-
-from venmo import cookies, singletons
+import logging
 
 from venmo._version import __version__  # noqa
 
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
 
-def exit_handler():
-    cookies.save(singletons.session().cookies)
-
-atexit.register(exit_handler)
+logging.getLogger('requests').setLevel(logging.WARNING)

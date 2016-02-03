@@ -11,9 +11,7 @@ import shutil
 import urllib
 import xml.etree.ElementTree as ET
 
-from venmo import settings, singletons
-
-session = singletons.session()
+from venmo import log, settings, singletons
 
 
 def configure(args=None):
@@ -40,7 +38,7 @@ def configure(args=None):
 
     # 2FA is expected because issue #23
     if "two-factor" not in redirect_url:
-        print "ERROR: invalid credentials"
+        log.error("invalid credentials")
         return False
 
     # Write email password
@@ -66,10 +64,10 @@ def two_factor(redirect_url, auth_request, csrftoken2):
 
     Return access_token or False.
     """
-    print "Sending SMS verification ..."
+    log.info("Sending SMS verification ...")
 
     # Get two factor page
-    response = session.get(redirect_url)
+    response = singletons.session().get(redirect_url)
 
     # Send SMS
     secret = extract_otp_secret(response.text)
@@ -79,7 +77,7 @@ def two_factor(redirect_url, auth_request, csrftoken2):
         "csrftoken2": csrftoken2,
     }
     url = "{}?{}".format(settings.TWO_FACTOR_URL, urllib.urlencode(data))
-    response = session.post(
+    response = singletons.session().post(
         url,
         headers=headers,
     )
@@ -89,7 +87,7 @@ def two_factor(redirect_url, auth_request, csrftoken2):
     # Prompt verification code
     verification_code = raw_input("Verification code: ")
     if not verification_code:
-        print "ERROR: verification code required"
+        log.error("verification code required")
         return False
 
     # Submit verification code
@@ -98,14 +96,14 @@ def two_factor(redirect_url, auth_request, csrftoken2):
         "auth_request": auth_request,
         "csrftoken2": csrftoken2,
     }
-    response = session.post(
+    response = singletons.session().post(
         settings.TWO_FACTOR_AUTHORIZATION_URL,
         headers=headers,
         json=data,
         allow_redirects=False,
     )
     if response.status_code != 200:
-        print "ERROR: verification code failed"
+        log.error("verification code failed")
         return False
 
     # Retrieve access token
@@ -131,7 +129,7 @@ def retrieve_access_token(code):
         "client_secret": settings.CLIENT_SECRET,
         "code": code,
     }
-    response = session.post(settings.ACCESS_TOKEN_URL, data)
+    response = singletons.session().post(settings.ACCESS_TOKEN_URL, data)
     response_dict = response.json()
     access_token = response_dict['access_token']
     return access_token
@@ -199,7 +197,7 @@ def update_credentials():
 
     incomplete = not email or not password
     if incomplete:
-        print "WARN: credentials incomplete"
+        log.warn("credentials incomplete")
         return False
 
     return email, password
@@ -207,7 +205,7 @@ def update_credentials():
 
 def submit_credentials(email, password):
     # Get and parse authorization webpage xml and form
-    response = session.get(_authorization_url())
+    response = singletons.session().get(_authorization_url())
     authorization_page_xml = response.text
     filtered_xml = _filter_script_tags(authorization_page_xml)
     root = ET.fromstring(filtered_xml)
@@ -230,9 +228,9 @@ def submit_credentials(email, password):
         "grant": 1,
     }
     url = "{}?{}".format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
-    response = session.post(url, allow_redirects=False)
+    response = singletons.session().post(url, allow_redirects=False)
     if response.status_code != 302:
-        print "ERROR: expecting a redirect"
+        log.error("expecting a redirect")
         return False
 
     redirect_url = response.headers['location']
