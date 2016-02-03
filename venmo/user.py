@@ -1,6 +1,6 @@
-"""
+'''
 User module.
-"""
+'''
 
 import json
 

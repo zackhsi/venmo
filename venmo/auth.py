@@ -1,6 +1,6 @@
-"""
+'''
 Authentication
-"""
+'''
 
 import ConfigParser
 import getpass
@@ -15,13 +15,13 @@ from venmo import log, settings, singletons
 
 
 def configure(args=None):
-    """Get venmo ready to make payments.
+    '''Get venmo ready to make payments.
 
     First, set username and password. If those change, then get access token.
     If that fails, unset username and password.
 
     Return whether or not we save an access token.
-    """
+    '''
     # Update credentials
     credentials = update_credentials()
     if not credentials:
@@ -37,8 +37,8 @@ def configure(args=None):
         redirect_url, auth_request, csrftoken2 = success
 
     # 2FA is expected because issue #23
-    if "two-factor" not in redirect_url:
-        log.error("invalid credentials")
+    if 'two-factor' not in redirect_url:
+        log.error('invalid credentials')
         return False
 
     # Write email password
@@ -60,41 +60,41 @@ def configure(args=None):
 
 
 def two_factor(redirect_url, auth_request, csrftoken2):
-    """Do the two factor auth dance.
+    '''Do the two factor auth dance.
 
     Return access_token or False.
-    """
-    log.info("Sending SMS verification ...")
+    '''
+    log.info('Sending SMS verification ...')
 
     # Get two factor page
     response = singletons.session().get(redirect_url)
 
     # Send SMS
     secret = extract_otp_secret(response.text)
-    headers = {"Venmo-Otp-Secret": secret}
+    headers = {'Venmo-Otp-Secret': secret}
     data = {
-        "via": "sms",
-        "csrftoken2": csrftoken2,
+        'via': 'sms',
+        'csrftoken2': csrftoken2,
     }
-    url = "{}?{}".format(settings.TWO_FACTOR_URL, urllib.urlencode(data))
+    url = '{}?{}'.format(settings.TWO_FACTOR_URL, urllib.urlencode(data))
     response = singletons.session().post(
         url,
         headers=headers,
     )
-    assert response.status_code == 200, "Post to 2FA failed"
-    assert response.json()['data']['status'] == 'sent', "SMS did not send"
+    assert response.status_code == 200, 'Post to 2FA failed'
+    assert response.json()['data']['status'] == 'sent', 'SMS did not send'
 
     # Prompt verification code
-    verification_code = raw_input("Verification code: ")
+    verification_code = raw_input('Verification code: ')
     if not verification_code:
-        log.error("verification code required")
+        log.error('verification code required')
         return False
 
     # Submit verification code
     headers['Venmo-Otp'] = verification_code
     data = {
-        "auth_request": auth_request,
-        "csrftoken2": csrftoken2,
+        'auth_request': auth_request,
+        'csrftoken2': csrftoken2,
     }
     response = singletons.session().post(
         settings.TWO_FACTOR_AUTHORIZATION_URL,
@@ -103,12 +103,12 @@ def two_factor(redirect_url, auth_request, csrftoken2):
         allow_redirects=False,
     )
     if response.status_code != 200:
-        log.error("verification code failed")
+        log.error('verification code failed')
         return False
 
     # Retrieve access token
     location = response.json()['location']
-    code = location.split("code=")[1]
+    code = location.split('code=')[1]
     access_token = retrieve_access_token(code)
     return access_token
 
@@ -125,9 +125,9 @@ def extract_otp_secret(text):
 
 def retrieve_access_token(code):
     data = {
-        "client_id": settings.CLIENT_ID,
-        "client_secret": settings.CLIENT_SECRET,
-        "code": code,
+        'client_id': settings.CLIENT_ID,
+        'client_secret': settings.CLIENT_SECRET,
+        'code': code,
     }
     response = singletons.session().post(settings.ACCESS_TOKEN_URL, data)
     response_dict = response.json()
@@ -147,35 +147,35 @@ def _authorization_url():
     ]
     params = {
         'client_id': settings.CLIENT_ID,
-        'scope': " ".join(scopes),
+        'scope': ' '.join(scopes),
         'response_type': 'code',
     }
-    return "{authorization_url}?{params}".format(
+    return '{authorization_url}?{params}'.format(
         authorization_url=settings.AUTHORIZATION_URL,
         params=urllib.urlencode(params)
     )
 
 
 def _filter_script_tags(input_xml):
-    """Filter out the script so we can parse the xml."""
+    '''Filter out the script so we can parse the xml.'''
     output_lines = []
     in_script = False
     for line in input_xml.splitlines():
-        if "<script>" in line:
+        if '<script>' in line:
             in_script = True
         if not in_script:
             output_lines.append(line)
-        if "</script>" in line:
+        if '</script>' in line:
             in_script = False
     return '\n'.join(output_lines)
 
 
 def update_credentials():
-    """Save username and password to config file.
+    '''Save username and password to config file.
 
     Entering nothing keeps the current credentials. Returns whether or not
     the credentials changed.
-    """
+    '''
     # Read old credentials
     config = read_config()
     try:
@@ -188,16 +188,16 @@ def update_credentials():
         old_password = ''
 
     # Prompt new credentials
-    email = raw_input("Venmo email [{}]: "
+    email = raw_input('Venmo email [{}]: '
                       .format(old_email if old_email else None))
-    password = getpass.getpass(prompt="Venmo password [{}]: "
-                               .format("*"*10 if old_password else None))
+    password = getpass.getpass(prompt='Venmo password [{}]: '
+                               .format('*'*10 if old_password else None))
     email = email or old_email
     password = password or old_password
 
     incomplete = not email or not password
     if incomplete:
-        log.warn("credentials incomplete")
+        log.warn('credentials incomplete')
         return False
 
     return email, password
@@ -220,17 +220,17 @@ def submit_credentials(email, password):
 
     # Submit form
     data = {
-        "username": email,
-        "password": password,
-        "web_redirect_url": web_redirect_url,
-        "csrftoken2": csrftoken2,
-        "auth_request": auth_request,
-        "grant": 1,
+        'username': email,
+        'password': password,
+        'web_redirect_url': web_redirect_url,
+        'csrftoken2': csrftoken2,
+        'auth_request': auth_request,
+        'grant': 1,
     }
-    url = "{}?{}".format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
+    url = '{}?{}'.format(settings.AUTHORIZATION_URL, urllib.urlencode(data))
     response = singletons.session().post(url, allow_redirects=False)
     if response.status_code != 302:
-        log.error("expecting a redirect")
+        log.error('expecting a redirect')
         return False
 
     redirect_url = response.headers['location']
@@ -274,5 +274,5 @@ def write_config(config):
 
 
 def reset(args=None):
-    """rm -rf ~/.venmo"""
+    '''rm -rf ~/.venmo'''
     shutil.rmtree(settings.DOT_VENMO)
