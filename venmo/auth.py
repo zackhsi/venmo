@@ -156,17 +156,17 @@ def _authorization_url():
     )
 
 
-def _filter_script_tags(input_xml):
+def _filter_tag(input_xml, tag):
     '''Filter out the script so we can parse the xml.'''
     output_lines = []
-    in_script = False
+    inside = False
     for line in input_xml.splitlines():
-        if '<script>' in line:
-            in_script = True
-        if not in_script:
+        if '<{tag}>'.format(**locals()) in line:
+            inside = True
+        if not inside:
             output_lines.append(line)
-        if '</script>' in line:
-            in_script = False
+        if '</{tag}>'.format(**locals()) in line:
+            inside = False
     return '\n'.join(output_lines)
 
 
@@ -207,7 +207,8 @@ def submit_credentials(email, password):
     # Get and parse authorization webpage xml and form
     response = singletons.session().get(_authorization_url())
     authorization_page_xml = response.text
-    filtered_xml = _filter_script_tags(authorization_page_xml)
+    filtered_xml = _filter_tag(authorization_page_xml, 'script')
+    filtered_xml = _filter_tag(filtered_xml, 'head')
     root = ET.fromstring(filtered_xml)
     form = root.find('.//form')
     for child in form:
