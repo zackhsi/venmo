@@ -17,7 +17,7 @@ import venmo
 logger = logging.getLogger('venmo.auth')
 
 
-def configure(args=None):
+def configure():
     '''Get venmo ready to make payments.
 
     First, set username and password. If those change, then get access token.
@@ -279,6 +279,6 @@ def write_config(config):
         config.write(configfile)
 
 
-def reset(args=None):
+def reset():
     '''rm -rf ~/.venmo'''
     shutil.rmtree(venmo.settings.DOT_VENMO)

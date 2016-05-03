@@ -11,12 +11,13 @@ Pay or charge people via the Venmo API:
 
 import argparse
 import os
+import sys
 from datetime import datetime
 
 import venmo
 
 
-def status(args):
+def status():
     '''Print out system status
 
     $ venmo status
@@ -82,8 +83,12 @@ def parse_args():
     parser.add_argument('-v', '--version', action='version',
                         version='%(prog)s ' + venmo.__version__)
 
+    if len(sys.argv) == 1:
+        sys.argv.append('-h')
     args = parser.parse_args()
-    args.func(args)
+    func = args.func
+    del args.func
+    func(**vars(args))
 
 
 def main():

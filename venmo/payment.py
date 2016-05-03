@@ -10,16 +10,16 @@ import venmo
 logger = logging.getLogger('venmo.payment')
 
 
-def pay(args):
-    _pay_or_charge(args)
+def pay(user, amount, note):
+    _pay_or_charge(user, amount, note)
 
 
-def charge(args):
-    args.amount = '-' + args.amount
-    _pay_or_charge(args)
+def charge(user, amount, note):
+    amount = '-' + amount
+    _pay_or_charge(user, amount, note)
 
 
-def _pay_or_charge(args):
+def _pay_or_charge(user, amount, note):
     access_token = venmo.auth.get_access_token()
     if not access_token:
         logger.warn('No access token. Configuring ...')
@@ -28,20 +28,20 @@ def _pay_or_charge(args):
         access_token = venmo.auth.get_access_token()
 
     params = {
-        'note': args.note,
-        'amount': args.amount,
+        'note': note,
+        'amount': amount,
         'access_token': access_token,
         'audience': 'private',
     }
-    if args.user.startswith('@'):
-        username = args.user[1:]
+    if user.startswith('@'):
+        username = user[1:]
         user_id = venmo.user.id_from_username(username.lower())
         if not user_id:
             logger.error('Could not find user @{}'.format(username))
             return
         params['user_id'] = user_id.lower()
     else:
-        params['phone'] = args.user
+        params['phone'] = user
     response = venmo.singletons.session().post(
         _payments_url_with_params(params)
     ).json()

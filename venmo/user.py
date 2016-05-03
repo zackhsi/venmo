@@ -14,8 +14,8 @@ def id_from_username(username):
     return None
 
 
-def print_search(args):
-    print json.dumps(search(args.query), indent=4)
+def print_search(query):
+    print json.dumps(search(query), indent=4)
 
 
 def search(query):
