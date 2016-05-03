@@ -4,7 +4,7 @@ User module.
 
 import json
 
-from venmo import settings, singletons
+import venmo
 
 
 def id_from_username(username):
@@ -19,8 +19,8 @@ def print_search(args):
 
 
 def search(query):
-    response = singletons.session().get(
-        settings.USERS_URL,
+    response = venmo.singletons.session().get(
+        venmo.settings.USERS_URL,
         params={
             'limit': 5,
             'query': query,

@@ -2,9 +2,12 @@
 Payment
 '''
 
+import logging
 import urllib
 
-from venmo import auth, log, settings, singletons, user
+import venmo
+
+logger = logging.getLogger('venmo.payment')
 
 
 def pay(args):
@@ -17,12 +20,12 @@ def charge(args):
 
 
 def _pay_or_charge(args):
-    access_token = auth.get_access_token()
+    access_token = venmo.auth.get_access_token()
     if not access_token:
-        log.warn('No access token. Configuring ...')
-        if not auth.configure():
+        logger.warn('No access token. Configuring ...')
+        if not venmo.auth.configure():
             return
-        access_token = auth.get_access_token()
+        access_token = venmo.auth.get_access_token()
 
     params = {
         'note': args.note,
@@ -32,14 +35,14 @@ def _pay_or_charge(args):
     }
     if args.user.startswith('@'):
         username = args.user[1:]
-        user_id = user.id_from_username(username.lower())
+        user_id = venmo.user.id_from_username(username.lower())
         if not user_id:
-            log.error('Could not find user @{}'.format(username))
+            logger.error('Could not find user @{}'.format(username))
             return
         params['user_id'] = user_id.lower()
     else:
         params['phone'] = args.user
-    response = singletons.session().post(
+    response = venmo.singletons.session().post(
         _payments_url_with_params(params)
     ).json()
     _print_response(response)
@@ -47,7 +50,7 @@ def _pay_or_charge(args):
 
 def _payments_url_with_params(params):
     return '{payments_base_url}?{params}'.format(
-        payments_base_url=settings.PAYMENTS_URL,
+        payments_base_url=venmo.settings.PAYMENTS_URL,
         params=urllib.urlencode(params),
     )
 
@@ -56,7 +59,7 @@ def _print_response(response):
     if 'error' in response:
         message = response['error']['message']
         code = response['error']['code']
-        log.error('message="{}" code={}'.format(message, code))
+        logger.error('message="{}" code={}'.format(message, code))
         return
 
     payment = response['data']['payment']
