@@ -61,7 +61,7 @@ def parse_args():
             'user',
             help='who to {}, either phone or username'.format(action),
         )
-        subparser.add_argument('amount', type=venmo.types.positive_string,
+        subparser.add_argument('amount', type=venmo.types.positive_float,
                                help='how much to pay or charge')
         subparser.add_argument('note', help='what the request is for')
         subparser.set_defaults(func=getattr(venmo.payment, action))

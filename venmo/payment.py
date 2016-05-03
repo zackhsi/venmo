@@ -15,7 +15,7 @@ def pay(user, amount, note):
 
 
 def charge(user, amount, note):
-    amount = '-' + amount
+    amount = -amount
     _pay_or_charge(user, amount, note)
 
 
