@@ -3,8 +3,10 @@ Payment
 '''
 
 import logging
+import sys
 import urllib
 
+import requests
 import venmo
 
 logger = logging.getLogger('venmo.payment')
@@ -44,33 +46,26 @@ def _pay_or_charge(user, amount, note):
         params['phone'] = user
     response = venmo.singletons.session().post(
         _payments_url_with_params(params)
-    ).json()
-    _print_response(response)
-
-
-def _payments_url_with_params(params):
-    return '{payments_base_url}?{params}'.format(
-        payments_base_url=venmo.settings.PAYMENTS_URL,
-        params=urllib.urlencode(params),
     )
+    data = response.json()
 
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        error_message = 'received {} from Venmo'.format(e.response.status_code)
+        if 'error' in data:
+            message = data['error']['message']
+            error_message += ': "{}"'.format(message)
+        print error_message
+        sys.exit(1)
 
-def _print_response(response):
-    if 'error' in response:
-        message = response['error']['message']
-        code = response['error']['code']
-        logger.error('message="{}" code={}'.format(message, code))
-        return
-
-    payment = response['data']['payment']
+    payment = data['data']['payment']
     target = payment['target']
-
     payment_action = payment['action']
     if payment_action == 'charge':
         payment_action = 'charged'
     if payment_action == 'pay':
         payment_action = 'paid'
-
     amount = payment['amount']
     if target['type'] == 'user':
         user = '{first_name} {last_name}'.format(
@@ -80,6 +75,12 @@ def _print_response(response):
     else:
         user = target[target['type']],
     note = payment['note']
-
     print ('Successfully {payment_action} {user} ${amount:.2f} for "{note}"'
            .format(**locals()))
+
+
+def _payments_url_with_params(params):
+    return '{payments_base_url}?{params}'.format(
+        payments_base_url=venmo.settings.PAYMENTS_URL,
+        params=urllib.urlencode(params),
+    )
