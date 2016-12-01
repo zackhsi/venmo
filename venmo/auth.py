@@ -117,13 +117,11 @@ def two_factor(redirect_url, auth_request, csrftoken2):
 
 
 def extract_otp_secret(text):
-    pattern = re.compile('data-otp-secret="(\w*)"')
+    pattern = re.compile('"secret":"(\w*)"')
     for line in text.splitlines():
-        if 'data-otp-secret' in line:
-            match = pattern.search(line)
-            return match.group(1)
-    raise Exception('msg="Could not extract data-otp-secret" text={}'
-                    .format(text))
+        match = pattern.search(line)
+        return match.group(1)
+    raise Exception('msg="Could not extract data-otp-secret"')
 
 
 def retrieve_access_token(code):
