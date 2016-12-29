@@ -12,7 +12,7 @@ def save(requests_cookiejar):
     except OSError:
         pass  # It's okay if directory already exists
     with open(venmo.settings.COOKIES_FILE, 'wb') as f:
-        pickle.dump(requests_cookiejar, f)
+        pickle.dump(requests_cookiejar, f, -1)
 
 
 def load():

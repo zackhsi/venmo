@@ -26,7 +26,7 @@ def status():
         User: youremailaddress
         Token: youraccesstoken
     '''
-    print '\n'.join([_version(), _credentials()])
+    print('\n'.join([_version(), _credentials()]))
 
 
 def _version():
@@ -95,7 +95,7 @@ def main():
     try:
         parse_args()
     except KeyboardInterrupt:
-        print ''
+        print('')
 
 
 if __name__ == '__main__':
