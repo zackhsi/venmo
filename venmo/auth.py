@@ -2,15 +2,25 @@
 Authentication
 '''
 
-import ConfigParser
 import getpass
 import logging
 import os
 import os.path
 import re
 import shutil
-import urllib
 import xml.etree.ElementTree as ET
+
+# Python 2.x fixes
+try: import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+try: from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
+
+try: input = raw_input
+except NameError: pass
 
 import venmo
 
@@ -46,8 +56,8 @@ def configure():
 
     # Write email password
     config = read_config()
-    config.set(ConfigParser.DEFAULTSECT, 'email', email)
-    config.set(ConfigParser.DEFAULTSECT, 'password', password)
+    config.set(configparser.DEFAULTSECT, 'email', email)
+    config.set(configparser.DEFAULTSECT, 'password', password)
     write_config(config)
 
     # Do 2FA
@@ -57,7 +67,7 @@ def configure():
 
     # Write access token
     config = read_config()
-    config.set(ConfigParser.DEFAULTSECT, 'access_token', access_token)
+    config.set(configparser.DEFAULTSECT, 'access_token', access_token)
     write_config(config)
     return True
 
@@ -79,7 +89,7 @@ def two_factor(redirect_url, auth_request, csrftoken2):
         'via': 'sms',
         'csrftoken2': csrftoken2,
     }
-    url = '{}?{}'.format(venmo.settings.TWO_FACTOR_URL, urllib.urlencode(data))
+    url = '{}?{}'.format(venmo.settings.TWO_FACTOR_URL, urlencode(data))
     response = venmo.singletons.session().post(
         url,
         headers=headers,
@@ -88,7 +98,7 @@ def two_factor(redirect_url, auth_request, csrftoken2):
     assert response.json()['data']['status'] == 'sent', 'SMS did not send'
 
     # Prompt verification code
-    verification_code = raw_input('Verification code: ')
+    verification_code = input('Verification code: ')
     if not verification_code:
         logger.error('verification code required')
         return False
@@ -154,7 +164,7 @@ def _authorization_url():
     }
     return '{authorization_url}?{params}'.format(
         authorization_url=venmo.settings.AUTHORIZATION_URL,
-        params=urllib.urlencode(params)
+        params=urlencode(params)
     )
 
 
@@ -181,16 +191,16 @@ def update_credentials():
     # Read old credentials
     config = read_config()
     try:
-        old_email = config.get(ConfigParser.DEFAULTSECT, 'email')
-    except ConfigParser.NoOptionError:
+        old_email = config.get(configparser.DEFAULTSECT, 'email')
+    except configparser.NoOptionError:
         old_email = ''
     try:
-        old_password = config.get(ConfigParser.DEFAULTSECT, 'password')
-    except ConfigParser.NoOptionError:
+        old_password = config.get(configparser.DEFAULTSECT, 'password')
+    except configparser.NoOptionError:
         old_password = ''
 
     # Prompt new credentials
-    email = raw_input('Venmo email [{}]: '
+    email = input('Venmo email [{}]: '
                       .format(old_email if old_email else None))
     password = getpass.getpass(prompt='Venmo password [{}]: '
                                .format('*' * 10 if old_password else None))
@@ -231,7 +241,7 @@ def submit_credentials(email, password):
         'grant': 1,
     }
     url = '{}?{}'.format(venmo.settings.AUTHORIZATION_URL,
-                         urllib.urlencode(data))
+                         urlencode(data))
     response = venmo.singletons.session().post(url, allow_redirects=False)
     if response.status_code != 302:
         logger.error('expecting a redirect')
@@ -244,26 +254,26 @@ def submit_credentials(email, password):
 def get_username():
     config = read_config()
     try:
-        return config.get(ConfigParser.DEFAULTSECT, 'email')
-    except ConfigParser.NoOptionError:
+        return config.get(configparser.DEFAULTSECT, 'email')
+    except configparser.NoOptionError:
         return None
 
 
 def get_password():
     config = read_config()
-    return config.get(ConfigParser.DEFAULTSECT, 'password')
+    return config.get(configparser.DEFAULTSECT, 'password')
 
 
 def get_access_token():
     config = read_config()
     try:
-        return config.get(ConfigParser.DEFAULTSECT, 'access_token')
-    except ConfigParser.NoOptionError:
+        return config.get(configparser.DEFAULTSECT, 'access_token')
+    except configparser.NoOptionError:
         return None
 
 
 def read_config():
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     config.read(venmo.settings.CREDENTIALS_FILE)
     return config
 

@@ -4,9 +4,13 @@ Payment
 
 import logging
 import sys
-import urllib
-
 import requests
+
+# Python 2.x fixes
+try: from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
+
 import venmo
 
 logger = logging.getLogger('venmo.payment')
@@ -56,7 +60,7 @@ def _pay_or_charge(user, amount, note):
         if 'error' in data:
             message = data['error']['message']
             error_message += ': "{}"'.format(message)
-        print error_message
+        print(error_message)
         sys.exit(1)
 
     payment = data['data']['payment']
@@ -75,12 +79,12 @@ def _pay_or_charge(user, amount, note):
     else:
         user = target[target['type']],
     note = payment['note']
-    print ('Successfully {payment_action} {user} ${amount:.2f} for "{note}"'
+    print('Successfully {payment_action} {user} ${amount:.2f} for "{note}"'
            .format(**locals()))
 
 
 def _payments_url_with_params(params):
     return '{payments_base_url}?{params}'.format(
         payments_base_url=venmo.settings.PAYMENTS_URL,
-        params=urllib.urlencode(params),
+        params=urlencode(params),
     )
