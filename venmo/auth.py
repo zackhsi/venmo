@@ -89,9 +89,9 @@ def two_factor(redirect_url, auth_request, csrftoken2):
         'via': 'sms',
         'csrftoken2': csrftoken2,
     }
-    url = '{}?{}'.format(venmo.settings.TWO_FACTOR_URL, urlencode(data))
     response = venmo.singletons.session().post(
-        url,
+        venmo.settings.TWO_FACTOR_URL,
+        json=data,
         headers=headers,
     )
     assert response.status_code == 200, 'Post to 2FA failed'
@@ -240,9 +240,11 @@ def submit_credentials(email, password):
         'auth_request': auth_request,
         'grant': 1,
     }
-    url = '{}?{}'.format(venmo.settings.AUTHORIZATION_URL,
-                         urlencode(data))
-    response = venmo.singletons.session().post(url, allow_redirects=False)
+    response = venmo.singletons.session().post(venmo.settings.AUTHORIZATION_URL,
+        json=data,
+        allow_redirects=False
+    )
+
     if response.status_code != 302:
         logger.error('expecting a redirect')
         return False

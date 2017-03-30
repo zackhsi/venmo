@@ -33,7 +33,7 @@ def _pay_or_charge(user, amount, note):
             return
         access_token = venmo.auth.get_access_token()
 
-    params = {
+    data = {
         'note': note,
         'amount': amount,
         'access_token': access_token,
@@ -45,11 +45,13 @@ def _pay_or_charge(user, amount, note):
         if not user_id:
             logger.error('Could not find user @{}'.format(username))
             return
-        params['user_id'] = user_id.lower()
+        data['user_id'] = user_id.lower()
     else:
-        params['phone'] = user
+        data['phone'] = user
+
     response = venmo.singletons.session().post(
-        _payments_url_with_params(params)
+        venmo.settings.PAYMENTS_URL,
+        json=data
     )
     data = response.json()
 
@@ -81,10 +83,3 @@ def _pay_or_charge(user, amount, note):
     note = payment['note']
     print('Successfully {payment_action} {user} ${amount:.2f} for "{note}"'
            .format(**locals()))
-
-
-def _payments_url_with_params(params):
-    return '{payments_base_url}?{params}'.format(
-        payments_base_url=venmo.settings.PAYMENTS_URL,
-        params=urlencode(params),
-    )
