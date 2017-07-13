@@ -10,19 +10,25 @@ import re
 import shutil
 import xml.etree.ElementTree as ET
 
+import venmo
+
 # Python 2.x fixes
-try: import configparser
+try:
+    import configparser
 except ImportError:
     import ConfigParser as configparser
 
-try: from urllib.parse import urlencode
+try:
+    from urllib.parse import urlencode
 except ImportError:
     from urllib import urlencode
 
-try: input = raw_input
-except NameError: pass
+try:
+    # pylint: disable=redefined-builtin
+    input = raw_input
+except NameError:
+    pass
 
-import venmo
 
 logger = logging.getLogger('venmo.auth')
 
@@ -47,7 +53,7 @@ def configure():
     if not success:
         return False
     else:
-        redirect_url, auth_request, csrftoken2 = success
+        redirect_url, csrftoken2 = success
 
     # 2FA is expected because issue #23
     if 'two-factor' not in redirect_url:
@@ -61,7 +67,7 @@ def configure():
     write_config(config)
 
     # Do 2FA
-    access_token = two_factor(redirect_url, auth_request, csrftoken2)
+    access_token = two_factor(redirect_url, csrftoken2, email, password)
     if not access_token:
         return False
 
@@ -72,7 +78,7 @@ def configure():
     return True
 
 
-def two_factor(redirect_url, auth_request, csrftoken2):
+def two_factor(redirect_url, csrftoken2, email, password):
     '''Do the two factor auth dance.
 
     Return access_token or False.
@@ -104,14 +110,15 @@ def two_factor(redirect_url, auth_request, csrftoken2):
         return False
 
     # Submit verification code
-    headers['Venmo-Otp'] = verification_code
     data = {
-        'auth_request': auth_request,
         'csrftoken2': csrftoken2,
+        'return_json': 'true',
+        'password': password,
+        'phoneEmailUsername': email,
+        'token': verification_code,
     }
     response = venmo.singletons.session().post(
         venmo.settings.TWO_FACTOR_AUTHORIZATION_URL,
-        headers=headers,
         json=data,
         allow_redirects=False,
     )
@@ -120,14 +127,12 @@ def two_factor(redirect_url, auth_request, csrftoken2):
         return False
 
     # Retrieve access token
-    location = response.json()['location']
-    code = location.split('code=')[1]
-    access_token = retrieve_access_token(code)
+    access_token = response.json()['access_token']
     return access_token
 
 
 def extract_otp_secret(text):
-    pattern = re.compile('"secret":"(\w*)"')
+    pattern = re.compile(r'"secret":"(\w*)"')
     for line in text.splitlines():
         match = pattern.search(line)
         return match.group(1)
@@ -173,11 +178,11 @@ def _filter_tag(input_xml, tag):
     output_lines = []
     inside = False
     for line in input_xml.splitlines():
-        if '<{tag}>'.format(**locals()) in line:
+        if '<{tag}>'.format(tag=tag) in line:
             inside = True
         if not inside:
             output_lines.append(line)
-        if '</{tag}>'.format(**locals()) in line:
+        if '</{tag}>'.format(tag=tag) in line:
             inside = False
     return '\n'.join(output_lines)
 
@@ -201,7 +206,7 @@ def update_credentials():
 
     # Prompt new credentials
     email = input('Venmo email [{}]: '
-                      .format(old_email if old_email else None))
+                  .format(old_email if old_email else None))
     password = getpass.getpass(prompt='Venmo password [{}]: '
                                .format('*' * 10 if old_password else None))
     email = email or old_email
@@ -240,9 +245,10 @@ def submit_credentials(email, password):
         'auth_request': auth_request,
         'grant': 1,
     }
-    response = venmo.singletons.session().post(venmo.settings.AUTHORIZATION_URL,
+    response = venmo.singletons.session().post(
+        venmo.settings.AUTHORIZATION_URL,
         json=data,
-        allow_redirects=False
+        allow_redirects=False,
     )
 
     if response.status_code != 302:
@@ -250,7 +256,7 @@ def submit_credentials(email, password):
         return False
 
     redirect_url = response.headers['location']
-    return redirect_url, auth_request, csrftoken2
+    return redirect_url, csrftoken2
 
 
 def get_username():
