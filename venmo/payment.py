@@ -49,7 +49,7 @@ def _pay_or_charge(user, amount, note):
     else:
         data['phone'] = user
 
-    response = venmo.singletons.session().post(
+    response = requests.post(
         venmo.settings.PAYMENTS_URL,
         json=data
     )
