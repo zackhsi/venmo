@@ -1,3 +1,6 @@
+[![PyPI version](https://img.shields.io/pypi/v/venmo.svg)](https://pypi.python.org/pypi/venmo)
+[![Build status](https://travis-ci.org/zackhsi/venmo.svg?branch=master)](https://travis-ci.org/zackhsi/venmo)
+
 Venmo
 =====
 
