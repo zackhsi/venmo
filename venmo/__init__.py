@@ -7,7 +7,8 @@ logging.basicConfig(level=logging.INFO,
 
 logging.getLogger('requests').setLevel(logging.WARNING)
 
-from . import (
+
+from . import (  # noqa: F401
     auth,
     cli,
     cookies,

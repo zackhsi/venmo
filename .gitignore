@@ -4,7 +4,9 @@ venv
 /dist/
 
 # Python egg metadata, regenerated from source files by setuptools.
+.eggs
 /*.egg-info
+build
 
 __pycache__
 *.pyc

@@ -6,11 +6,6 @@ import logging
 import sys
 import requests
 
-# Python 2.x fixes
-try: from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
-
 import venmo
 
 logger = logging.getLogger('venmo.payment')
@@ -82,4 +77,9 @@ def _pay_or_charge(user, amount, note):
         user = target[target['type']],
     note = payment['note']
     print('Successfully {payment_action} {user} ${amount:.2f} for "{note}"'
-           .format(**locals()))
+          .format(
+              payment_action=payment_action,
+              user=user,
+              amount=amount,
+              note=note,
+          ))

@@ -3,9 +3,6 @@ from setuptools import setup
 # 'Import' __version__
 exec(open('venmo/_version.py').read())
 
-requirements = [
-    'requests>=2.9.1',
-]
 
 setup(
     name='venmo',
@@ -16,7 +13,9 @@ setup(
     author_email='zackhsi@gmail.com',
     license='MIT',
     packages=['venmo'],
-    install_requires=requirements,
+    install_requires=[
+        'requests>=2.9.1',
+    ],
     entry_points={
         'console_scripts': [
             'venmo = venmo.cli:main',
