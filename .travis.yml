@@ -7,3 +7,4 @@ install:
   - make init
 script:
   - flake8
+  - make test

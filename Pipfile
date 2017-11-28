@@ -13,3 +13,6 @@ venmo = {path = ".", editable = true}
 [dev-packages]
 
 flake8 = "*"
+pytest = "*"
+pytest-socket = "*"
+mock = "*"

@@ -36,11 +36,11 @@ def _pay_or_charge(user, amount, note):
     }
     if user.startswith('@'):
         username = user[1:]
-        user_id = venmo.user.id_from_username(username.lower())
+        user_id = venmo.user.id_from_username(username)
         if not user_id:
             logger.error('Could not find user @{}'.format(username))
             return
-        data['user_id'] = user_id.lower()
+        data['user_id'] = user_id
     else:
         data['phone'] = user
 

@@ -10,7 +10,7 @@ import venmo
 
 def id_from_username(username):
     for u in search(username):
-        if u['username'] == username:
+        if u['username'].lower() == username.lower():
             return u['id']
     return None
 
