@@ -1,3 +1,8 @@
 #!/bin/bash
 set -e
-python setup.py register sdist upload
+
+echo "Building Source and Wheel (universal) distribution..."
+python setup.py sdist bdist_wheel --universal
+
+echo "Uploading the package to PyPi via Twine..."
+twine upload dist/*
