@@ -280,6 +280,12 @@ def get_access_token():
         return None
 
 
+def ensure_access_token():
+    while not get_access_token():
+        logger.warn('No access token. Configuring ...')
+        configure()
+
+
 def read_config():
     config = configparser.RawConfigParser()
     config.read(venmo.settings.CREDENTIALS_FILE)

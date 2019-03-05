@@ -21,12 +21,8 @@ def charge(user, amount, note):
 
 
 def _pay_or_charge(user, amount, note):
+    venmo.auth.ensure_access_token()
     access_token = venmo.auth.get_access_token()
-    if not access_token:
-        logger.warn('No access token. Configuring ...')
-        if not venmo.auth.configure():
-            return
-        access_token = venmo.auth.get_access_token()
 
     data = {
         'note': note,
