@@ -20,12 +20,16 @@ def print_search(query):
 
 
 def search(query):
+    venmo.auth.ensure_access_token()
     response = requests.get(
         venmo.settings.USERS_URL,
         params={
             'limit': 5,
             'query': query,
-        }
+        },
+        headers={
+            'Authorization': 'Bearer {}'.format(venmo.auth.get_access_token())
+        },
     )
     users = response.json()['data']
     results = []
